@@ -43,5 +43,27 @@ public static class SqlScripts
             order_index INT NOT NULL DEFAULT 0,
             notes TEXT
         );
+
+        -- Drop and recreate users if it was created with wrong schema (missing SERIAL)
+        DO $$
+        BEGIN
+            IF EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name = 'users' AND column_name = 'id'
+                AND column_default IS NULL
+            ) THEN
+                DROP TABLE IF EXISTS users CASCADE;
+            END IF;
+        END $$;
+
+        CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(100) NOT NULL,
+            email VARCHAR(150) NOT NULL UNIQUE,
+            password_hash VARCHAR(255) NOT NULL,
+            role VARCHAR(20) NOT NULL DEFAULT 'user',
+            is_active BOOLEAN NOT NULL DEFAULT true,
+            created_at TIMESTAMP DEFAULT NOW()
+        );
         """;
 }

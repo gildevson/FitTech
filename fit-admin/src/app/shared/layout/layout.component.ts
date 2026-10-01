@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterLink, RouterOutlet, RouterLinkActive } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-layout',
@@ -74,9 +75,34 @@ import { RouterLink, RouterOutlet, RouterLinkActive } from '@angular/router';
     }
     .sidebar-footer {
       padding: 16px 20px;
-      font-size: 0.75rem;
-      color: #555577;
       border-top: 1px solid #0f3460;
+    }
+    .user-info {
+      font-size: 0.8rem;
+      color: #8892b0;
+      margin-bottom: 10px;
+    }
+    .user-info strong {
+      display: block;
+      color: #ccd6f6;
+      font-size: 0.85rem;
+      margin-bottom: 2px;
+    }
+    .btn-logout {
+      width: 100%;
+      padding: 8px 12px;
+      background: rgba(233, 69, 96, 0.1);
+      color: #e94560;
+      border: 1px solid rgba(233, 69, 96, 0.25);
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 500;
+      text-align: left;
+      transition: background 0.2s;
+    }
+    .btn-logout:hover {
+      background: rgba(233, 69, 96, 0.2);
     }
   `],
   template: `
@@ -86,31 +112,44 @@ import { RouterLink, RouterOutlet, RouterLinkActive } from '@angular/router';
         <ul class="nav-menu">
           <li>
             <a routerLink="/dashboard" routerLinkActive="active-link">
-              <span class="nav-icon">&#9632;</span> Dashboard
+              <span class="nav-icon">📊</span> Dashboard
             </a>
           </li>
           <li>
             <a routerLink="/muscle-groups" routerLinkActive="active-link">
-              <span class="nav-icon">&#9670;</span> Grupos Musculares
+              <span class="nav-icon">💪</span> Grupos Musculares
             </a>
           </li>
           <li>
             <a routerLink="/exercises" routerLinkActive="active-link">
-              <span class="nav-icon">&#9651;</span> Exercícios
+              <span class="nav-icon">🏋️</span> Exercícios
             </a>
           </li>
           <li>
             <a routerLink="/workout-plans" routerLinkActive="active-link">
-              <span class="nav-icon">&#9654;</span> Planos de Treino
+              <span class="nav-icon">📋</span> Planos de Treino
             </a>
           </li>
           <li>
             <a routerLink="/workouts" routerLinkActive="active-link">
-              <span class="nav-icon">&#9733;</span> Treinos
+              <span class="nav-icon">🔥</span> Treinos
+            </a>
+          </li>
+          <li>
+            <a routerLink="/users" routerLinkActive="active-link">
+              <span class="nav-icon">👥</span> Usuários
             </a>
           </li>
         </ul>
-        <div class="sidebar-footer">FitTech Admin v1.0</div>
+        <div class="sidebar-footer">
+          @if (authService.currentUser(); as user) {
+            <div class="user-info">
+              <strong>{{ user.name }}</strong>
+              {{ user.email }}
+            </div>
+          }
+          <button class="btn-logout" (click)="authService.logout()">🚪 Sair</button>
+        </div>
       </aside>
       <main class="main-content">
         <router-outlet />
@@ -118,4 +157,6 @@ import { RouterLink, RouterOutlet, RouterLinkActive } from '@angular/router';
     </div>
   `
 })
-export class LayoutComponent {}
+export class LayoutComponent {
+  readonly authService = inject(AuthService);
+}

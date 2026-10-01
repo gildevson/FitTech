@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   readonly baseUrl = 'https://localhost:7195';
-  readonly http = inject(HttpClient);
+  private readonly http = inject(HttpClient);
 
   get<T>(path: string, params?: Record<string, string | number>): Observable<T> {
     return this.http.get<T>(`${this.baseUrl}${path}`, { params: params as any });
@@ -17,10 +17,6 @@ export class ApiService {
 
   put<T>(path: string, body: unknown): Observable<T> {
     return this.http.put<T>(`${this.baseUrl}${path}`, body);
-  }
-
-  patch<T>(path: string, body: unknown): Observable<T> {
-    return this.http.patch<T>(`${this.baseUrl}${path}`, body);
   }
 
   delete<T>(path: string): Observable<T> {

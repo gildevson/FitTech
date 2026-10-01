@@ -1,3 +1,15 @@
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  token: string;
+  name: string;
+  email: string;
+  role: string;
+}
+
 export interface MuscleGroup {
   id: number;
   name: string;
@@ -43,18 +55,6 @@ export interface WorkoutExercise {
   restSeconds: number;
   orderIndex: number;
   notes?: string;
-}
-
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
-
-export interface LoginResponse {
-  token: string;
-  name: string;
-  email: string;
-  role: string;
 }
 
 export interface AppUser {

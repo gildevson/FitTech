@@ -1,0 +1,158 @@
+// FitTech App — Global Styles
+// Nota: os CSS do Ionic são incluídos via angular.json > styles array
+
+// Font
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+// ===== Base =====
+* {
+  box-sizing: border-box;
+}
+
+body, html, ion-app {
+  background: #1a1a2e;
+  color: #e0e0e0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+// ===== Scrollbars finas =====
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(233, 69, 96, 0.3);
+  border-radius: 4px;
+}
+
+// ===== Alert customizado (logout confirm) =====
+.fittech-alert {
+  --background: #16213e;
+  --color: #e0e0e0;
+
+  .alert-title {
+    color: #ffffff;
+    font-weight: 700;
+  }
+
+  .alert-message {
+    color: #8892b0;
+  }
+
+  .alert-button {
+    color: #8892b0;
+
+    &.alert-button-role-destructive {
+      color: #e94560;
+      font-weight: 700;
+    }
+  }
+}
+
+// ===== Toast =====
+ion-toast {
+  --background: #16213e;
+  --color: #e0e0e0;
+  --border-radius: 10px;
+  --box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+// ===== Ripple / focus outline customizado =====
+ion-button::part(native):focus {
+  outline: 2px solid rgba(233, 69, 96, 0.5);
+  outline-offset: 2px;
+}
+
+// ===== ion-content background força tema escuro =====
+ion-content {
+  --background: #1a1a2e;
+}
+
+// ===== Refresher =====
+ion-refresher {
+  --color: #e94560;
+}
+
+ion-refresher-content {
+  --refreshing-spinner: crescent;
+  --pulling-icon: chevron-down-circle-outline;
+}
+
+// ===== Header/Toolbar =====
+ion-header::after {
+  display: none;
+}
+
+ion-toolbar {
+  --background: #16213e;
+  --border-color: rgba(233, 69, 96, 0.2);
+}
+
+ion-title {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+// ===== Tab Bar =====
+ion-tab-bar {
+  --background: #16213e;
+  --border: 1px solid rgba(233, 69, 96, 0.2);
+  height: 60px;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+ion-tab-button {
+  --color: #6b7280;
+  --color-selected: #e94560;
+}
+
+// ===== ion-list / ion-item =====
+ion-list {
+  background: transparent !important;
+}
+
+ion-item {
+  --background: #16213e;
+  --background-hover: rgba(233, 69, 96, 0.06);
+  --color: #e0e0e0;
+}
+
+// ===== ion-card =====
+ion-card {
+  --background: #16213e;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+ion-card-title {
+  color: #ffffff;
+}
+
+ion-card-subtitle {
+  color: #8892b0;
+}
+
+// ===== ion-chip =====
+ion-chip {
+  --background: rgba(233, 69, 96, 0.08);
+  --color: #8892b0;
+}
+
+// ===== ion-searchbar =====
+ion-searchbar {
+  --background: #16213e;
+  --color: #e0e0e0;
+  --placeholder-color: #6b7280;
+  --icon-color: #e94560;
+}
+
+// ===== ion-input (label flutuante) =====
+ion-input {
+  --highlight-color-focused: #e94560;
+  --highlight-color-valid: #48bb78;
+  --highlight-color-invalid: #e94560;
+}
