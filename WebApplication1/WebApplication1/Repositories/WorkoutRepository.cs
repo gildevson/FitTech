@@ -23,7 +23,7 @@ public class WorkoutRepository : IWorkoutRepository
         return await conn.QueryAsync<Workout>(SelectWithJoin + " ORDER BY w.order_index, w.name");
     }
 
-    public async Task<IEnumerable<Workout>> GetByWorkoutPlanAsync(int workoutPlanId)
+    public async Task<IEnumerable<Workout>> GetByWorkoutPlanAsync(Guid workoutPlanId)
     {
         using var conn = _connectionFactory.CreateConnection();
         return await conn.QueryAsync<Workout>(
@@ -31,17 +31,17 @@ public class WorkoutRepository : IWorkoutRepository
             new { WorkoutPlanId = workoutPlanId });
     }
 
-    public async Task<Workout?> GetByIdAsync(int id)
+    public async Task<Workout?> GetByIdAsync(Guid id)
     {
         using var conn = _connectionFactory.CreateConnection();
         return await conn.QueryFirstOrDefaultAsync<Workout>(
             SelectWithJoin + " WHERE w.id = @Id", new { Id = id });
     }
 
-    public async Task<int> CreateAsync(Workout workout)
+    public async Task<Guid> CreateAsync(Workout workout)
     {
         using var conn = _connectionFactory.CreateConnection();
-        return await conn.ExecuteScalarAsync<int>("""
+        return await conn.ExecuteScalarAsync<Guid>("""
             INSERT INTO workouts (workout_plan_id, name, day_of_week, order_index)
             VALUES (@WorkoutPlanId, @Name, @DayOfWeek, @OrderIndex)
             RETURNING id
@@ -59,7 +59,7 @@ public class WorkoutRepository : IWorkoutRepository
         return rows > 0;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(Guid id)
     {
         using var conn = _connectionFactory.CreateConnection();
         var rows = await conn.ExecuteAsync("DELETE FROM workouts WHERE id = @Id", new { Id = id });

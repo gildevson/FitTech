@@ -15,15 +15,15 @@ export class UserService {
     return this.api.post<AppUser>('/api/users', data);
   }
 
-  update(id: number, data: { name: string; email: string; role: string; isActive: boolean }): Observable<void> {
+  update(id: string, data: { name: string; email: string; role: string; isActive: boolean }): Observable<void> {
     return this.api.put<void>(`/api/users/${id}`, data);
   }
 
-  toggleActive(id: number, isActive: boolean): Observable<void> {
+  toggleActive(id: string, isActive: boolean): Observable<void> {
     return this.api.patch<void>(`/api/users/${id}/toggle-active`, isActive);
   }
 
-  delete(id: number): Observable<void> {
+  delete(id: string): Observable<void> {
     return this.api.delete<void>(`/api/users/${id}`);
   }
 }

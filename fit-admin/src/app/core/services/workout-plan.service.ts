@@ -11,7 +11,7 @@ export class WorkoutPlanService {
     return this.api.get<WorkoutPlan[]>('/api/workoutplans');
   }
 
-  getById(id: number): Observable<WorkoutPlan> {
+  getById(id: string): Observable<WorkoutPlan> {
     return this.api.get<WorkoutPlan>(`/api/workoutplans/${id}`);
   }
 
@@ -19,11 +19,11 @@ export class WorkoutPlanService {
     return this.api.post<WorkoutPlan>('/api/workoutplans', data);
   }
 
-  update(id: number, data: Partial<WorkoutPlan>): Observable<WorkoutPlan> {
+  update(id: string, data: Partial<WorkoutPlan>): Observable<WorkoutPlan> {
     return this.api.put<WorkoutPlan>(`/api/workoutplans/${id}`, data);
   }
 
-  delete(id: number): Observable<void> {
+  delete(id: string): Observable<void> {
     return this.api.delete<void>(`/api/workoutplans/${id}`);
   }
 }

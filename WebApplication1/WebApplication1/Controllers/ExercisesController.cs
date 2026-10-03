@@ -12,15 +12,15 @@ public class ExercisesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] int? muscleGroupId)
+    public async Task<IActionResult> GetAll([FromQuery] Guid? muscleGroupId)
     {
         if (muscleGroupId.HasValue)
             return Ok(await _repository.GetByMuscleGroupAsync(muscleGroupId.Value));
         return Ok(await _repository.GetAllAsync());
     }
 
-    [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetById(int id)
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetById(Guid id)
     {
         var item = await _repository.GetByIdAsync(id);
         return item is null ? NotFound() : Ok(item);
@@ -41,8 +41,8 @@ public class ExercisesController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id }, exercise);
     }
 
-    [HttpPut("{id:int}")]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdateExerciseDto dto)
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateExerciseDto dto)
     {
         var exercise = new Exercise
         {
@@ -56,8 +56,8 @@ public class ExercisesController : ControllerBase
         return updated ? NoContent() : NotFound();
     }
 
-    [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(int id)
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id)
     {
         var deleted = await _repository.DeleteAsync(id);
         return deleted ? NoContent() : NotFound();

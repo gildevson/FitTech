@@ -1,8 +1,29 @@
-// FitTech — Ionic CSS Variables
+// FitMob — Ionic CSS Variables
 // Tema escuro com accent #e94560
 
 :root {
-  // Cor primária — vermelho FitTech
+  // ===== Design tokens FitMob =====
+  --ft-bg: #0b1020;
+  --ft-bg-elevated: #10172b;
+  --ft-surface: #151d35;
+  --ft-surface-2: #1b2542;
+  --ft-border: rgba(255, 255, 255, 0.07);
+  --ft-border-strong: rgba(255, 255, 255, 0.14);
+  --ft-text: #f1f4fb;
+  --ft-text-muted: #9aa5c4;
+  --ft-text-faint: #667091;
+  --ft-accent: #e94560;
+  --ft-accent-strong: #d1334e;
+  --ft-accent-soft: rgba(233, 69, 96, 0.12);
+  --ft-accent-ring: rgba(233, 69, 96, 0.35);
+  --ft-success: #3ecf8e;
+  --ft-radius-sm: 8px;
+  --ft-radius: 12px;
+  --ft-radius-lg: 18px;
+  --ft-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.25);
+  --ft-gradient: linear-gradient(135deg, #f05a74 0%, #d1334e 100%);
+
+  // Cor primária — vermelho FitMob
   --ion-color-primary: #e94560;
   --ion-color-primary-rgb: 233, 69, 96;
   --ion-color-primary-contrast: #ffffff;
@@ -19,7 +40,7 @@
   --ion-color-secondary-tint: #274870;
 
   // Terciária
-  --ion-color-tertiary: #16213e;
+  --ion-color-tertiary: #151d35;
   --ion-color-tertiary-rgb: 22, 33, 62;
   --ion-color-tertiary-contrast: #ffffff;
   --ion-color-tertiary-contrast-rgb: 255, 255, 255;
@@ -76,10 +97,10 @@
 // Tema escuro obrigatório
 .ion-theme-dark,
 body {
-  --ion-background-color: #1a1a2e;
-  --ion-background-color-rgb: 26, 26, 46;
+  --ion-background-color: #0b1020;
+  --ion-background-color-rgb: 11, 16, 32;
 
-  --ion-text-color: #e0e0e0;
+  --ion-text-color: #f1f4fb;
   --ion-text-color-rgb: 224, 224, 224;
 
   --ion-color-step-50: #1e1e32;
@@ -102,10 +123,10 @@ body {
   --ion-color-step-900: #626276;
   --ion-color-step-950: #66667a;
 
-  --ion-item-background: #16213e;
-  --ion-toolbar-background: #16213e;
-  --ion-tab-bar-background: #16213e;
-  --ion-card-background: #16213e;
+  --ion-item-background: #151d35;
+  --ion-toolbar-background: #151d35;
+  --ion-tab-bar-background: #151d35;
+  --ion-card-background: #151d35;
 
-  --ion-overlay-background-color: #16213e;
+  --ion-overlay-background-color: #151d35;
 }

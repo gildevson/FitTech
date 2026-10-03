@@ -23,7 +23,7 @@ public class ExerciseRepository : IExerciseRepository
         return await conn.QueryAsync<Exercise>(SelectWithJoin + " ORDER BY e.name");
     }
 
-    public async Task<IEnumerable<Exercise>> GetByMuscleGroupAsync(int muscleGroupId)
+    public async Task<IEnumerable<Exercise>> GetByMuscleGroupAsync(Guid muscleGroupId)
     {
         using var conn = _connectionFactory.CreateConnection();
         return await conn.QueryAsync<Exercise>(
@@ -31,17 +31,17 @@ public class ExerciseRepository : IExerciseRepository
             new { MuscleGroupId = muscleGroupId });
     }
 
-    public async Task<Exercise?> GetByIdAsync(int id)
+    public async Task<Exercise?> GetByIdAsync(Guid id)
     {
         using var conn = _connectionFactory.CreateConnection();
         return await conn.QueryFirstOrDefaultAsync<Exercise>(
             SelectWithJoin + " WHERE e.id = @Id", new { Id = id });
     }
 
-    public async Task<int> CreateAsync(Exercise exercise)
+    public async Task<Guid> CreateAsync(Exercise exercise)
     {
         using var conn = _connectionFactory.CreateConnection();
-        return await conn.ExecuteScalarAsync<int>("""
+        return await conn.ExecuteScalarAsync<Guid>("""
             INSERT INTO exercises (name, description, muscle_group_id, image_url)
             VALUES (@Name, @Description, @MuscleGroupId, @ImageUrl)
             RETURNING id
@@ -59,7 +59,7 @@ public class ExerciseRepository : IExerciseRepository
         return rows > 0;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(Guid id)
     {
         using var conn = _connectionFactory.CreateConnection();
         var rows = await conn.ExecuteAsync("DELETE FROM exercises WHERE id = @Id", new { Id = id });

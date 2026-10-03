@@ -9,7 +9,7 @@ public class WorkoutExerciseRepository : IWorkoutExerciseRepository
         _connectionFactory = connectionFactory;
     }
 
-    public async Task<IEnumerable<WorkoutExercise>> GetByWorkoutAsync(int workoutId)
+    public async Task<IEnumerable<WorkoutExercise>> GetByWorkoutAsync(Guid workoutId)
     {
         using var conn = _connectionFactory.CreateConnection();
         return await conn.QueryAsync<WorkoutExercise>("""
@@ -25,7 +25,7 @@ public class WorkoutExerciseRepository : IWorkoutExerciseRepository
             """, new { WorkoutId = workoutId });
     }
 
-    public async Task<WorkoutExercise?> GetByIdAsync(int id)
+    public async Task<WorkoutExercise?> GetByIdAsync(Guid id)
     {
         using var conn = _connectionFactory.CreateConnection();
         return await conn.QueryFirstOrDefaultAsync<WorkoutExercise>("""
@@ -40,10 +40,10 @@ public class WorkoutExerciseRepository : IWorkoutExerciseRepository
             """, new { Id = id });
     }
 
-    public async Task<int> CreateAsync(WorkoutExercise workoutExercise)
+    public async Task<Guid> CreateAsync(WorkoutExercise workoutExercise)
     {
         using var conn = _connectionFactory.CreateConnection();
-        return await conn.ExecuteScalarAsync<int>("""
+        return await conn.ExecuteScalarAsync<Guid>("""
             INSERT INTO workout_exercises (workout_id, exercise_id, sets, reps, rest_seconds, order_index, notes)
             VALUES (@WorkoutId, @ExerciseId, @Sets, @Reps, @RestSeconds, @OrderIndex, @Notes)
             RETURNING id
@@ -61,7 +61,7 @@ public class WorkoutExerciseRepository : IWorkoutExerciseRepository
         return rows > 0;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(Guid id)
     {
         using var conn = _connectionFactory.CreateConnection();
         var rows = await conn.ExecuteAsync(

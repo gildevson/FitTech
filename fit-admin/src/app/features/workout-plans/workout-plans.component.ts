@@ -1,72 +1,44 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { WorkoutPlanService } from '../../core/services/workout-plan.service';
 import { WorkoutPlan } from '../../core/models';
+import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { ButtonComponent } from '../../shared/components/button/button.component';
+import { TableCardComponent } from '../../shared/components/table-card/table-card.component';
+import { PaginationComponent } from '../../shared/components/pagination/pagination.component';
+import { LoadingOverlayComponent } from '../../shared/components/loading-overlay/loading-overlay.component';
+import { DrawerComponent } from '../../shared/components/drawer/drawer.component';
 
 @Component({
   selector: 'app-workout-plans',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, DatePipe, PageHeaderComponent, ButtonComponent, TableCardComponent, PaginationComponent, LoadingOverlayComponent, DrawerComponent],
   styles: [`
-    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
-    .page-header h1 { font-size: 1.8rem; color: #fff; margin: 0; }
-    .btn-primary {
-      background: #e94560; color: #fff; border: none;
-      padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: background 0.2s;
-    }
-    .btn-primary:hover { background: #c73652; }
-    .btn-danger {
-      background: transparent; color: #e94560; border: 1px solid #e94560;
-      padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.82rem; transition: all 0.2s;
-    }
-    .btn-danger:hover { background: rgba(233,69,96,0.15); }
-    .btn-edit {
-      background: transparent; color: #7090e0; border: 1px solid #7090e0;
-      padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.82rem; margin-right: 8px; transition: all 0.2s;
-    }
-    .btn-edit:hover { background: rgba(112,144,224,0.15); }
-    .table-card { background: #16213e; border: 1px solid #0f3460; border-radius: 12px; overflow: hidden; }
-    table { width: 100%; border-collapse: collapse; }
-    thead { background: #0f3460; }
-    th { padding: 14px 16px; text-align: left; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.5px; color: #8090c0; }
-    td { padding: 14px 16px; color: #d0d0e8; font-size: 0.92rem; border-top: 1px solid rgba(255,255,255,0.05); }
-    tr:hover td { background: rgba(255,255,255,0.02); }
-    .empty-state { text-align: center; padding: 40px; color: #6060a0; }
-    .loading { text-align: center; padding: 40px; color: #6060a0; }
-    .alert { padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 0.9rem; }
-    .alert-success { background: rgba(46,213,115,0.1); border: 1px solid rgba(46,213,115,0.3); color: #2ed573; }
-    .alert-error { background: rgba(233,69,96,0.1); border: 1px solid rgba(233,69,96,0.3); color: #e94560; }
-    .modal-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.7);
-      display: flex; align-items: center; justify-content: center; z-index: 1000;
-    }
-    .modal {
-      background: #16213e; border: 1px solid #0f3460; border-radius: 12px;
-      padding: 32px; width: 480px; max-width: 95vw;
-    }
-    .modal h2 { margin: 0 0 24px 0; color: #fff; font-size: 1.3rem; }
+    .empty-state { text-align: center; padding: 40px; color: var(--color-text-muted); }
+    .loading { text-align: center; padding: 40px; color: var(--color-text-muted); }
+    .alert { padding: 12px 16px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 0.9rem; }
+    .alert-success { background: var(--color-success-soft); border: 1px solid var(--color-success); color: var(--color-success); }
+    .alert-error { background: var(--color-danger-soft); border: 1px solid var(--color-danger); color: var(--color-danger); }
+    .clickable-row { cursor: pointer; }
+    .clickable-row:hover { background: var(--color-surface-hover); }
+    .drawer-title { margin: 0 0 24px 0; color: var(--color-text); font-size: 1.25rem; }
     .form-group { margin-bottom: 18px; }
-    .form-group label { display: block; margin-bottom: 6px; color: #8090c0; font-size: 0.85rem; }
+    .form-group label { display: block; margin-bottom: 6px; color: var(--color-text-muted); font-size: 0.85rem; font-weight: 500; }
     .form-group input, .form-group textarea {
       width: 100%; box-sizing: border-box;
-      background: #1a1a2e; border: 1px solid #0f3460; border-radius: 8px;
-      color: #e0e0e0; padding: 10px 14px; font-size: 0.92rem; transition: border-color 0.2s;
+      background: var(--color-card-bg); border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+      color: var(--color-text); padding: 10px 14px; font-size: 0.92rem; font-family: var(--font-family);
+      transition: border-color 0.15s;
     }
-    .form-group input:focus, .form-group textarea:focus { outline: none; border-color: #e94560; }
+    .form-group input:focus, .form-group textarea:focus { outline: none; border-color: var(--color-primary); }
     .form-group textarea { resize: vertical; min-height: 80px; }
     .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; }
-    .btn-cancel {
-      background: transparent; color: #8090c0; border: 1px solid #0f3460;
-      padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 0.9rem;
-    }
-    .btn-cancel:hover { border-color: #8090c0; }
   `],
   template: `
-    <div class="page-header">
-      <h1>Planos de Treino</h1>
-      <button class="btn-primary" (click)="openCreate()">+ Novo Plano</button>
-    </div>
+    <ui-page-header title="Planos de Treino">
+      <ui-button (click)="openCreate()">+ Novo Plano</ui-button>
+    </ui-page-header>
 
     @if (successMsg()) {
       <div class="alert alert-success">{{ successMsg() }}</div>
@@ -75,60 +47,63 @@ import { WorkoutPlan } from '../../core/models';
       <div class="alert alert-error">{{ errorMsg() }}</div>
     }
 
-    <div class="table-card">
+    <ui-table-card>
       @if (loading()) {
         <div class="loading">Carregando...</div>
       } @else if (items().length === 0) {
         <div class="empty-state">Nenhum plano de treino cadastrado.</div>
       } @else {
-        <table>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Nome</th>
-              <th>Descrição</th>
-              <th>Criado em</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (item of items(); track item.id) {
+        <ui-loading-overlay [loading]="pageLoading()">
+          <table class="ui-table">
+            <thead>
               <tr>
-                <td>{{ item.id }}</td>
-                <td>{{ item.name }}</td>
-                <td>{{ item.description || '—' }}</td>
-                <td>{{ item.createdAt | date:'dd/MM/yyyy' }}</td>
-                <td>
-                  <button class="btn-edit" (click)="openEdit(item)">Editar</button>
-                  <button class="btn-danger" (click)="confirmDelete(item)">Excluir</button>
-                </td>
+                <th>Nome</th>
+                <th>Descrição</th>
+                <th>Criado em</th>
               </tr>
-            }
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              @for (item of pagedItems(); track item.id) {
+                <tr class="clickable-row" (click)="openEdit(item)">
+                  <td>{{ item.name }}</td>
+                  <td>{{ item.description || '—' }}</td>
+                  <td>{{ item.createdAt | date:'dd/MM/yyyy' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </ui-loading-overlay>
+        <ui-pagination
+          [total]="items().length"
+          [page]="page()"
+          [pageSize]="pageSize"
+          [loading]="pageLoading()"
+          (pageChange)="onPageChange($event)"
+        />
       }
-    </div>
+    </ui-table-card>
 
     @if (showModal()) {
-      <div class="modal-overlay" (click)="closeModal()">
-        <div class="modal" (click)="$event.stopPropagation()">
-          <h2>{{ editingId() ? 'Editar Plano' : 'Novo Plano de Treino' }}</h2>
-          <div class="form-group">
-            <label>Nome *</label>
-            <input type="text" [(ngModel)]="form.name" placeholder="Ex: Plano Hipertrofia A..." />
-          </div>
-          <div class="form-group">
-            <label>Descrição</label>
-            <textarea [(ngModel)]="form.description" placeholder="Descrição opcional..."></textarea>
-          </div>
-          <div class="modal-actions">
-            <button class="btn-cancel" (click)="closeModal()">Cancelar</button>
-            <button class="btn-primary" (click)="save()" [disabled]="saving()">
-              {{ saving() ? 'Salvando...' : 'Salvar' }}
-            </button>
-          </div>
+      <ui-drawer size="md" (close)="closeModal()">
+        <h2 class="drawer-title">{{ editingId() ? 'Editar Plano' : 'Novo Plano de Treino' }}</h2>
+        <div class="form-group">
+          <label>Nome *</label>
+          <input type="text" [(ngModel)]="form.name" placeholder="Ex: Plano Hipertrofia A..." />
         </div>
-      </div>
+        <div class="form-group">
+          <label>Descrição</label>
+          <textarea [(ngModel)]="form.description" placeholder="Descrição opcional..."></textarea>
+        </div>
+        <div class="modal-actions">
+          @if (editingId()) {
+            <ui-button variant="danger" (click)="confirmDelete()" style="margin-right: auto;">Excluir</ui-button>
+          }
+          <ui-button variant="ghost" (click)="closeModal()">Cancelar</ui-button>
+          <ui-button (click)="save()" [disabled]="saving()">
+            {{ saving() ? 'Salvando...' : 'Salvar' }}
+          </ui-button>
+        </div>
+      </ui-drawer>
     }
   `
 })
@@ -138,19 +113,35 @@ export class WorkoutPlansComponent implements OnInit {
   items = signal<WorkoutPlan[]>([]);
   loading = signal(true);
   showModal = signal(false);
-  editingId = signal<number | null>(null);
+  editingId = signal<string | null>(null);
   saving = signal(false);
   successMsg = signal('');
   errorMsg = signal('');
 
   form = { name: '', description: '' };
 
+  page = signal(1);
+  pageSize = 10;
+  pageLoading = signal(false);
+  pagedItems = computed(() => {
+    const start = (this.page() - 1) * this.pageSize;
+    return this.items().slice(start, start + this.pageSize);
+  });
+
+  onPageChange(newPage: number) {
+    this.pageLoading.set(true);
+    setTimeout(() => {
+      this.page.set(newPage);
+      this.pageLoading.set(false);
+    }, 400);
+  }
+
   ngOnInit() { this.load(); }
 
   load() {
     this.loading.set(true);
     this.service.getAll().subscribe({
-      next: (data) => { this.items.set(data); this.loading.set(false); },
+      next: (data) => { this.items.set(data); this.page.set(1); this.loading.set(false); },
       error: () => { this.errorMsg.set('Erro ao carregar planos.'); this.loading.set(false); }
     });
   }
@@ -187,10 +178,13 @@ export class WorkoutPlansComponent implements OnInit {
     });
   }
 
-  confirmDelete(item: WorkoutPlan) {
-    if (!confirm(`Excluir "${item.name}"?`)) return;
-    this.service.delete(item.id).subscribe({
+  confirmDelete() {
+    const id = this.editingId();
+    if (!id) return;
+    if (!confirm(`Excluir "${this.form.name}"?`)) return;
+    this.service.delete(id).subscribe({
       next: () => {
+        this.showModal.set(false);
         this.successMsg.set('Plano excluído!');
         setTimeout(() => this.successMsg.set(''), 3000);
         this.load();

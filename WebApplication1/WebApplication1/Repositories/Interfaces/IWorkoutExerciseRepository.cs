@@ -1,8 +1,8 @@
 public interface IWorkoutExerciseRepository
 {
-    Task<IEnumerable<WorkoutExercise>> GetByWorkoutAsync(int workoutId);
-    Task<WorkoutExercise?> GetByIdAsync(int id);
-    Task<int> CreateAsync(WorkoutExercise workoutExercise);
+    Task<IEnumerable<WorkoutExercise>> GetByWorkoutAsync(Guid workoutId);
+    Task<WorkoutExercise?> GetByIdAsync(Guid id);
+    Task<Guid> CreateAsync(WorkoutExercise workoutExercise);
     Task<bool> UpdateAsync(WorkoutExercise workoutExercise);
-    Task<bool> DeleteAsync(int id);
+    Task<bool> DeleteAsync(Guid id);
 }

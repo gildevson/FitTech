@@ -28,8 +28,8 @@ public class UsersController : ControllerBase
         }));
     }
 
-    [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetById(int id)
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetById(Guid id)
     {
         var user = await _repository.GetByIdAsync(id);
         if (user is null) return NotFound();
@@ -74,8 +74,8 @@ public class UsersController : ControllerBase
         });
     }
 
-    [HttpPut("{id:int}")]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdateUserDto dto)
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateUserDto dto)
     {
         var user = await _repository.GetByIdAsync(id);
         if (user is null) return NotFound();
@@ -89,15 +89,15 @@ public class UsersController : ControllerBase
         return updated ? NoContent() : NotFound();
     }
 
-    [HttpPatch("{id:int}/toggle-active")]
-    public async Task<IActionResult> ToggleActive(int id, [FromBody] bool isActive)
+    [HttpPatch("{id:guid}/toggle-active")]
+    public async Task<IActionResult> ToggleActive(Guid id, [FromBody] bool isActive)
     {
         var toggled = await _repository.ToggleActiveAsync(id, isActive);
         return toggled ? NoContent() : NotFound();
     }
 
-    [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(int id)
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id)
     {
         var deleted = await _repository.DeleteAsync(id);
         return deleted ? NoContent() : NotFound();

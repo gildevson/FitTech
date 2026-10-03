@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.fittech.app',
-  appName: 'FitTech',
+  appId: 'com.fitmob.app',
+  appName: 'FitMob',
   webDir: 'www',
   server: {
     androidScheme: 'https'

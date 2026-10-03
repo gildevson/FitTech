@@ -1,10 +1,10 @@
 public interface IUserRepository
 {
     Task<IEnumerable<User>> GetAllAsync();
-    Task<User?> GetByIdAsync(int id);
+    Task<User?> GetByIdAsync(Guid id);
     Task<User?> GetByEmailAsync(string email);
-    Task<int> CreateAsync(User user);
+    Task<Guid> CreateAsync(User user);
     Task<bool> UpdateAsync(User user);
-    Task<bool> DeleteAsync(int id);
-    Task<bool> ToggleActiveAsync(int id, bool isActive);
+    Task<bool> DeleteAsync(Guid id);
+    Task<bool> ToggleActiveAsync(Guid id, bool isActive);
 }

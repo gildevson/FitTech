@@ -10,7 +10,8 @@ import {
   IonIcon,
   IonButton,
   IonSkeletonText,
-  AlertController
+  AlertController,
+  ToastController
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
@@ -20,10 +21,13 @@ import {
   calendar,
   logOut,
   checkmarkCircle,
-  closeCircle
+  closeCircle,
+  camera,
+  trash
 } from 'ionicons/icons';
 import { AuthService } from '../../core/services/auth.service';
 import { ApiService } from '../../core/services/api.service';
+import { ProfilePhotoService } from '../../core/services/profile-photo.service';
 import { AppUser } from '../../core/models';
 
 @Component({
@@ -42,167 +46,197 @@ import { AppUser } from '../../core/models';
     IonSkeletonText
   ],
   styles: [`
-    ion-header ion-toolbar {
-      --background: #16213e;
-      --color: #ffffff;
-      --border-color: rgba(233, 69, 96, 0.3);
-    }
-
-    ion-toolbar ion-title {
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      color: #ffffff;
-    }
-
-    ion-content {
-      --background: #1a1a2e;
-    }
-
     .profile-hero {
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 32px 24px 24px;
+      padding: 36px 24px 24px;
       text-align: center;
+      background: radial-gradient(480px 220px at 50% 0, rgba(233, 69, 96, 0.14), transparent 70%);
+    }
+
+    .avatar-wrap {
+      position: relative;
+      margin-bottom: 16px;
     }
 
     .avatar-circle {
-      width: 88px;
-      height: 88px;
-      background: linear-gradient(135deg, #e94560, #c73652);
+      width: 104px;
+      height: 104px;
+      background: var(--ft-gradient);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 2.4rem;
-      margin-bottom: 16px;
-      box-shadow: 0 4px 20px rgba(233, 69, 96, 0.4);
+      font-weight: 700;
+      color: #ffffff;
+      overflow: hidden;
+      border: 0;
+      padding: 0;
+      cursor: pointer;
+      box-shadow: 0 0 0 4px var(--ft-bg), 0 0 0 5px var(--ft-accent-ring), 0 10px 28px rgba(233, 69, 96, 0.35);
+    }
+
+    .avatar-circle img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .avatar-edit {
+      position: absolute;
+      right: -2px;
+      bottom: -2px;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 3px solid var(--ft-bg);
+      background: var(--ft-surface-2);
+      color: var(--ft-text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .avatar-edit ion-icon {
+      font-size: 1rem;
+    }
+
+    .photo-remove {
+      --color: var(--ft-text-muted);
+      font-size: 0.78rem;
+      text-transform: none;
+      margin: -8px 0 8px;
+    }
+
+    .file-input {
+      display: none;
     }
 
     .profile-name {
-      font-size: 1.4rem;
+      font-size: 1.35rem;
       font-weight: 700;
-      color: #ffffff;
+      color: var(--ft-text);
       margin: 0 0 4px;
     }
 
     .profile-email {
       font-size: 0.88rem;
-      color: #8892b0;
-      margin: 0 0 12px;
+      color: var(--ft-text-muted);
+      margin: 0 0 14px;
     }
 
     .role-badge {
-      background: rgba(233, 69, 96, 0.15);
-      color: #e94560;
-      border: 1px solid rgba(233, 69, 96, 0.3);
+      background: var(--ft-accent-soft);
+      color: var(--ft-accent);
       border-radius: 20px;
       padding: 4px 14px;
-      font-size: 0.78rem;
+      font-size: 0.7rem;
       font-weight: 700;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
     }
 
     .section-title {
-      padding: 20px 16px 8px;
-      font-size: 0.78rem;
+      margin: 0;
+      padding: 20px 20px 10px;
+      font-size: 0.72rem;
       font-weight: 700;
-      color: #6b7280;
-      letter-spacing: 1px;
+      color: var(--ft-text-faint);
+      letter-spacing: 0.08em;
       text-transform: uppercase;
     }
 
     ion-list {
-      background: transparent;
       padding: 0 16px;
     }
 
     ion-item {
-      --background: #16213e;
-      --color: #e0e0e0;
-      --border-color: rgba(255, 255, 255, 0.05);
-      --padding-start: 16px;
-      --inner-padding-end: 16px;
-      border-radius: 10px;
+      --background: var(--ft-surface);
+      --color: var(--ft-text);
+      --padding-start: 14px;
+      --inner-padding-end: 14px;
+      border-radius: var(--ft-radius);
       margin-bottom: 8px;
-      border: 1px solid rgba(233, 69, 96, 0.1);
+      border: 1px solid var(--ft-border);
     }
 
     .item-icon {
       width: 36px;
       height: 36px;
-      background: rgba(233, 69, 96, 0.12);
-      border-radius: 8px;
+      background: var(--ft-accent-soft);
+      border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-right: 12px;
+      margin-right: 14px;
     }
 
     .item-icon ion-icon {
-      color: #e94560;
+      color: var(--ft-accent);
       font-size: 1.1rem;
     }
 
     .item-label-small {
-      font-size: 0.76rem;
-      color: #6b7280;
-      margin-bottom: 2px;
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--ft-text-faint);
+      margin: 0 0 2px;
     }
 
     .item-value {
       font-size: 0.92rem;
-      color: #e0e0e0;
+      color: var(--ft-text);
       font-weight: 500;
+      margin: 0;
     }
 
     .status-active {
-      color: #48bb78;
+      color: var(--ft-success);
       font-weight: 600;
     }
 
     .status-inactive {
-      color: #e94560;
+      color: var(--ft-accent);
       font-weight: 600;
     }
 
     .logout-section {
-      padding: 24px 16px 48px;
+      padding: 20px 16px 16px;
     }
 
     .btn-logout {
-      --background: rgba(233, 69, 96, 0.1);
-      --background-activated: rgba(233, 69, 96, 0.25);
-      --color: #e94560;
-      --border-radius: 10px;
-      --border-color: rgba(233, 69, 96, 0.3);
+      --background: transparent;
+      --background-activated: var(--ft-accent-soft);
+      --background-hover: var(--ft-accent-soft);
+      --color: var(--ft-accent);
+      --border-radius: var(--ft-radius);
+      --border-color: var(--ft-accent-ring);
       --border-style: solid;
       --border-width: 1px;
-      --padding-top: 16px;
-      --padding-bottom: 16px;
-      font-size: 0.95rem;
-      font-weight: 700;
-      letter-spacing: 0.3px;
+      height: 48px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      text-transform: none;
     }
 
     .skeleton-hero {
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 32px 24px 24px;
-    }
-
-    ion-skeleton-text {
-      --background: rgba(255, 255, 255, 0.08);
-      border-radius: 4px;
+      padding: 36px 24px 24px;
     }
 
     .app-version {
       text-align: center;
-      padding: 0 0 12px;
-      font-size: 0.78rem;
-      color: #4a5568;
+      margin: 0;
+      padding: 0 0 32px;
+      font-size: 0.75rem;
+      color: var(--ft-text-faint);
     }
   `],
   template: `
@@ -223,9 +257,27 @@ import { AppUser } from '../../core/models';
       } @else {
         <!-- Hero com dados do usuário -->
         <div class="profile-hero">
-          <div class="avatar-circle">🏋️</div>
+          <div class="avatar-wrap">
+            <button type="button" class="avatar-circle" aria-label="Alterar foto de perfil" (click)="fileInput.click()">
+              @if (photoService.photo(); as photo) {
+                <img [src]="photo" alt="Foto de perfil" />
+              } @else {
+                {{ getInitial() }}
+              }
+            </button>
+            <button type="button" class="avatar-edit" aria-label="Alterar foto de perfil" (click)="fileInput.click()">
+              <ion-icon name="camera"></ion-icon>
+            </button>
+            <input #fileInput class="file-input" type="file" accept="image/*" (change)="onPhotoSelected($event)" />
+          </div>
           <h2 class="profile-name">{{ authService.currentUser()?.name }}</h2>
           <p class="profile-email">{{ authService.currentUser()?.email }}</p>
+          @if (photoService.photo()) {
+            <ion-button class="photo-remove" fill="clear" size="small" (click)="photoService.remove()">
+              <ion-icon name="trash" slot="start"></ion-icon>
+              Remover foto
+            </ion-button>
+          }
           <span class="role-badge">{{ getRoleLabel(authService.currentUser()?.role) }}</span>
         </div>
 
@@ -331,7 +383,7 @@ import { AppUser } from '../../core/models';
           </ion-button>
         </div>
 
-        <p class="app-version">FitTech App v1.0.0</p>
+        <p class="app-version">FitMob v1.0.0</p>
       }
     </ion-content>
   `
@@ -340,12 +392,14 @@ export class PerfilPage implements OnInit {
   readonly authService = inject(AuthService);
   private readonly api = inject(ApiService);
   private readonly alertCtrl = inject(AlertController);
+  private readonly toastCtrl = inject(ToastController);
+  readonly photoService = inject(ProfilePhotoService);
 
   userDetails = signal<AppUser | null>(null);
   loading = signal(true);
 
   constructor() {
-    addIcons({ person, mail, shield, calendar, logOut, checkmarkCircle, closeCircle });
+    addIcons({ person, mail, shield, calendar, logOut, checkmarkCircle, closeCircle, camera, trash });
   }
 
   ngOnInit() {
@@ -378,7 +432,7 @@ export class PerfilPage implements OnInit {
     const alert = await this.alertCtrl.create({
       header: 'Sair',
       message: 'Tem certeza que deseja sair da sua conta?',
-      cssClass: 'fittech-alert',
+      cssClass: 'fitmob-alert',
       buttons: [
         {
           text: 'Cancelar',
@@ -392,6 +446,26 @@ export class PerfilPage implements OnInit {
       ]
     });
     await alert.present();
+  }
+
+  async onPhotoSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+
+    let message = 'Foto de perfil atualizada.';
+    try {
+      await this.photoService.setFromFile(file);
+    } catch (err) {
+      message = err instanceof Error ? err.message : 'Não foi possível carregar a imagem.';
+    }
+    const toast = await this.toastCtrl.create({ message, duration: 2500, position: 'top' });
+    await toast.present();
+  }
+
+  getInitial(): string {
+    return (this.authService.currentUser()?.name ?? '?').trim().charAt(0).toUpperCase();
   }
 
   getRoleLabel(role?: string): string {

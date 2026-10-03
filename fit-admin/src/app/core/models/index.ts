@@ -1,30 +1,30 @@
 export interface MuscleGroup {
-  id: number;
+  id: string;
   name: string;
   description?: string;
   createdAt: string;
 }
 
 export interface Exercise {
-  id: number;
+  id: string;
   name: string;
   description?: string;
-  muscleGroupId: number;
+  muscleGroupId: string;
   muscleGroupName?: string;
   imageUrl?: string;
   createdAt: string;
 }
 
 export interface WorkoutPlan {
-  id: number;
+  id: string;
   name: string;
   description?: string;
   createdAt: string;
 }
 
 export interface Workout {
-  id: number;
-  workoutPlanId: number;
+  id: string;
+  workoutPlanId: string;
   workoutPlanName?: string;
   name: string;
   dayOfWeek: number;
@@ -33,9 +33,9 @@ export interface Workout {
 }
 
 export interface WorkoutExercise {
-  id: number;
-  workoutId: number;
-  exerciseId: number;
+  id: string;
+  workoutId: string;
+  exerciseId: string;
   exerciseName?: string;
   muscleGroupName?: string;
   sets: number;
@@ -58,7 +58,7 @@ export interface LoginResponse {
 }
 
 export interface AppUser {
-  id: number;
+  id: string;
   name: string;
   email: string;
   role: string;

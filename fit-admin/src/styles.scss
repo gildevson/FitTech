@@ -1,4 +1,89 @@
-/* Global styles for FitTech Admin */
+/* Global styles / design tokens for GordoFit Admin — inspired by Mira dashboard */
+
+:root {
+  /* Surfaces */
+  --color-bg: #f4f6fb;
+  --color-sidebar-bg: #171c3a;
+  --color-sidebar-bg-hover: rgba(255, 255, 255, 0.06);
+  --color-card-bg: #ffffff;
+  --color-surface-hover: #f9fafc;
+
+  /* Brand / accent */
+  --color-primary: #3e63dd;
+  --color-primary-hover: #3253c3;
+  --color-primary-soft: rgba(62, 99, 221, 0.1);
+
+  /* Status */
+  --color-success: #2ed573;
+  --color-success-soft: rgba(46, 213, 115, 0.12);
+  --color-danger: #e5484d;
+  --color-danger-soft: rgba(229, 72, 77, 0.1);
+  --color-warning: #f5a623;
+  --color-warning-soft: rgba(245, 166, 35, 0.12);
+  --color-info: #3e63dd;
+  --color-info-soft: rgba(62, 99, 221, 0.1);
+
+  /* Text */
+  --color-text: #1f2430;
+  --color-text-muted: #8a8fa3;
+  --color-text-on-dark: #e4e7f5;
+  --color-text-on-dark-muted: #8891b5;
+
+  /* Border */
+  --color-border: #e7e9f3;
+  --color-border-dark: rgba(255, 255, 255, 0.08);
+
+  /* Shape */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+
+  /* Elevation */
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --shadow-md: 0 4px 16px rgba(16, 24, 40, 0.08);
+  --shadow-lg: 0 12px 32px rgba(16, 24, 40, 0.12);
+
+  /* Typography */
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+
+  color-scheme: light;
+}
+
+/* Clean, soft dark theme — not pitch black, kept close in contrast to the light palette */
+:root[data-theme='dark'] {
+  --color-bg: #1b1e2b;
+  --color-sidebar-bg: #11131c;
+  --color-sidebar-bg-hover: rgba(255, 255, 255, 0.06);
+  --color-card-bg: #242837;
+  --color-surface-hover: #2b3041;
+
+  --color-primary: #6e8bff;
+  --color-primary-hover: #8099ff;
+  --color-primary-soft: rgba(110, 139, 255, 0.16);
+
+  --color-success: #37d67f;
+  --color-success-soft: rgba(55, 214, 127, 0.14);
+  --color-danger: #f0656a;
+  --color-danger-soft: rgba(240, 101, 106, 0.14);
+  --color-warning: #f7b84d;
+  --color-warning-soft: rgba(247, 184, 77, 0.14);
+  --color-info: #6e8bff;
+  --color-info-soft: rgba(110, 139, 255, 0.16);
+
+  --color-text: #e6e8f0;
+  --color-text-muted: #9aa0b8;
+  --color-text-on-dark: #e6e8f0;
+  --color-text-on-dark-muted: #8891b5;
+
+  --color-border: #333850;
+  --color-border-dark: rgba(255, 255, 255, 0.08);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.4);
+
+  color-scheme: dark;
+}
 
 *, *::before, *::after {
   box-sizing: border-box;
@@ -8,9 +93,9 @@ html, body {
   margin: 0;
   padding: 0;
   height: 100%;
-  background: #1a1a2e;
-  color: #e0e0e0;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-family);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -20,17 +105,52 @@ app-root {
   height: 100%;
 }
 
+h1, h2, h3, h4, p {
+  margin: 0;
+}
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #1a1a2e;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #0f3460;
+  background: var(--color-border);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #e94560;
+  background: var(--color-primary);
+}
+
+/* Shared table pattern used inside <ui-table-card> */
+.ui-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.ui-table thead {
+  background: var(--color-surface-hover);
+}
+.ui-table th {
+  padding: 14px 16px;
+  text-align: left;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-muted);
+  font-weight: 600;
+  border-bottom: 1px solid var(--color-border);
+}
+.ui-table td {
+  padding: 14px 16px;
+  color: var(--color-text);
+  font-size: 0.92rem;
+  border-bottom: 1px solid var(--color-border);
+}
+.ui-table tbody tr:last-child td {
+  border-bottom: none;
+}
+.ui-table tbody tr:hover td {
+  background: var(--color-surface-hover);
 }

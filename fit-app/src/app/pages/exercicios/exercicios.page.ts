@@ -41,34 +41,12 @@ import { Exercise, MuscleGroup } from '../../core/models';
     IonIcon
   ],
   styles: [`
-    ion-header ion-toolbar {
-      --background: #16213e;
-      --color: #ffffff;
-      --border-color: rgba(233, 69, 96, 0.3);
-    }
-
-    ion-toolbar ion-title {
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      color: #ffffff;
-    }
-
-    .title-accent {
-      color: #e94560;
-    }
-
-    ion-content {
-      --background: #1a1a2e;
-    }
-
     ion-searchbar {
-      --background: #16213e;
-      --color: #e0e0e0;
-      --placeholder-color: #6b7280;
-      --icon-color: #e94560;
-      --clear-button-color: #8892b0;
-      --border-radius: 10px;
-      padding: 12px 16px 4px;
+      --background: var(--ft-surface);
+      --box-shadow: inset 0 0 0 1px var(--ft-border);
+      --border-radius: var(--ft-radius);
+      --clear-button-color: var(--ft-text-muted);
+      padding: 14px 16px 4px;
     }
 
     .filter-chips {
@@ -84,60 +62,60 @@ import { Exercise, MuscleGroup } from '../../core/models';
     }
 
     ion-chip {
-      --background: rgba(233, 69, 96, 0.1);
-      --color: #8892b0;
-      border: 1px solid rgba(233, 69, 96, 0.2);
+      --background: var(--ft-surface);
+      --color: var(--ft-text-muted);
+      border: 1px solid var(--ft-border);
+      margin: 0;
       font-size: 0.8rem;
       font-weight: 500;
       flex-shrink: 0;
-      transition: all 0.2s;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
     }
 
     ion-chip.active-chip {
-      --background: rgba(233, 69, 96, 0.25);
-      --color: #e94560;
-      border-color: rgba(233, 69, 96, 0.5);
-      font-weight: 700;
+      --background: var(--ft-accent);
+      --color: #ffffff;
+      border-color: var(--ft-accent);
+      font-weight: 600;
     }
 
     ion-list {
-      background: transparent;
-      padding: 0 8px;
+      padding: 0 16px 16px;
     }
 
     ion-item {
-      --background: #16213e;
-      --color: #e0e0e0;
-      --border-color: rgba(255, 255, 255, 0.05);
-      --padding-start: 16px;
-      --padding-end: 16px;
+      --background: var(--ft-surface);
+      --color: var(--ft-text);
+      --padding-start: 14px;
+      --padding-end: 14px;
       --inner-padding-end: 0;
-      border-radius: 10px;
+      border-radius: var(--ft-radius);
       margin-bottom: 8px;
-      border: 1px solid rgba(233, 69, 96, 0.1);
+      border: 1px solid var(--ft-border);
     }
 
     .exercise-icon {
       width: 44px;
       height: 44px;
-      background: rgba(233, 69, 96, 0.12);
-      border-radius: 10px;
+      background: var(--ft-accent-soft);
+      border-radius: var(--ft-radius);
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-right: 12px;
+      margin-right: 14px;
       flex-shrink: 0;
     }
 
     .exercise-icon ion-icon {
-      color: #e94560;
-      font-size: 1.3rem;
+      color: var(--ft-accent);
+      font-size: 1.25rem;
     }
 
     .exercise-info {
       display: flex;
       flex-direction: column;
-      gap: 3px;
+      gap: 4px;
       padding: 12px 0;
       flex: 1;
     }
@@ -145,64 +123,53 @@ import { Exercise, MuscleGroup } from '../../core/models';
     .exercise-name {
       font-size: 0.95rem;
       font-weight: 600;
-      color: #ffffff;
+      color: var(--ft-text);
     }
 
     .muscle-group-tag {
-      font-size: 0.76rem;
+      font-size: 0.7rem;
       font-weight: 600;
-      color: #e94560;
-      background: rgba(233, 69, 96, 0.1);
+      color: var(--ft-accent);
+      background: var(--ft-accent-soft);
       padding: 2px 8px;
-      border-radius: 4px;
+      border-radius: 6px;
+      letter-spacing: 0.02em;
       display: inline-block;
       align-self: flex-start;
     }
 
     .exercise-desc {
       font-size: 0.8rem;
-      color: #8892b0;
-      line-height: 1.4;
+      color: var(--ft-text-muted);
+      line-height: 1.45;
+      white-space: normal;
     }
 
     .section-info {
-      padding: 4px 16px 8px;
-      font-size: 0.82rem;
-      color: #6b7280;
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 60px 32px;
-      color: #8892b0;
-    }
-
-    .empty-state ion-icon {
-      font-size: 3rem;
-      color: #2d3748;
-      display: block;
-      margin-bottom: 16px;
-    }
-
-    .empty-state p {
       margin: 0;
-      font-size: 0.9rem;
+      padding: 4px 20px 10px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--ft-text-faint);
     }
 
     .skeleton-item {
-      background: #16213e;
-      border-radius: 10px;
-      padding: 16px;
-      margin: 0 8px 8px;
+      background: var(--ft-surface);
+      border: 1px solid var(--ft-border);
+      border-radius: var(--ft-radius);
+      padding: 14px;
+      margin: 0 16px 8px;
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 14px;
     }
 
     .skeleton-avatar {
       width: 44px;
       height: 44px;
-      border-radius: 10px;
+      border-radius: var(--ft-radius);
       flex-shrink: 0;
     }
 
@@ -211,11 +178,6 @@ import { Exercise, MuscleGroup } from '../../core/models';
       display: flex;
       flex-direction: column;
       gap: 6px;
-    }
-
-    ion-skeleton-text {
-      --background: rgba(255, 255, 255, 0.08);
-      border-radius: 4px;
     }
   `],
   template: `
@@ -268,7 +230,7 @@ import { Exercise, MuscleGroup } from '../../core/models';
         }
       } @else if (filteredExercises().length === 0) {
         <div class="empty-state">
-          <ion-icon name="information-circle"></ion-icon>
+          <div class="empty-icon"><ion-icon name="information-circle"></ion-icon></div>
           <p>Nenhum exercício encontrado.</p>
         </div>
       } @else {
@@ -302,7 +264,7 @@ export class ExerciciosPage implements OnInit {
   muscleGroups = signal<MuscleGroup[]>([]);
   loading = signal(true);
   searchText = '';
-  selectedMuscleGroup = signal<number | null>(null);
+  selectedMuscleGroup = signal<string | null>(null);
 
   filteredExercises = computed(() => {
     let list = this.exercises();
@@ -360,7 +322,7 @@ export class ExerciciosPage implements OnInit {
     // computed signal reacts automatically via filteredExercises
   }
 
-  selectMuscleGroup(id: number | null) {
+  selectMuscleGroup(id: string | null) {
     this.selectedMuscleGroup.set(id);
   }
 }

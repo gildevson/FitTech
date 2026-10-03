@@ -57,72 +57,75 @@ const DAY_NAMES: Record<number, string> = {
     IonIcon
   ],
   styles: [`
-    ion-header ion-toolbar {
-      --background: #16213e;
-      --color: #ffffff;
-      --border-color: rgba(233, 69, 96, 0.3);
-    }
-
-    ion-toolbar ion-title {
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      color: #ffffff;
-    }
-
     .title-accent {
-      color: #e94560;
-    }
-
-    ion-content {
-      --background: #1a1a2e;
+      color: var(--ft-accent);
     }
 
     .section-header {
-      padding: 20px 16px 8px;
+      padding: 24px 20px 8px;
       display: flex;
       align-items: center;
-      gap: 8px;
-    }
-
-    .section-header ion-icon {
-      color: #e94560;
-      font-size: 1.2rem;
+      justify-content: space-between;
     }
 
     .section-header h2 {
       margin: 0;
-      font-size: 1rem;
+      font-size: 0.75rem;
       font-weight: 700;
-      color: #ccd6f6;
-      letter-spacing: 0.3px;
+      color: var(--ft-text-faint);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .plan-count-badge {
+      background: var(--ft-accent-soft);
+      color: var(--ft-accent);
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
     }
 
     ion-card {
-      --background: #16213e;
-      border: 1px solid rgba(233, 69, 96, 0.15);
-      border-radius: 12px;
-      margin: 8px 16px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      --background: var(--ft-surface);
+      border: 1px solid var(--ft-border);
+      border-radius: var(--ft-radius-lg);
+      margin: 10px 16px;
+      box-shadow: var(--ft-shadow);
+      overflow: hidden;
+      position: relative;
+    }
+
+    ion-card::before {
+      content: '';
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 3px;
+      background: var(--ft-gradient);
     }
 
     ion-card-header {
-      padding-bottom: 4px;
+      padding: 18px 18px 4px;
     }
 
     ion-card-title {
-      font-size: 1rem;
+      font-size: 1.05rem;
       font-weight: 700;
-      color: #ffffff;
+      letter-spacing: -0.01em;
+      color: var(--ft-text);
     }
 
     ion-card-subtitle {
-      font-size: 0.8rem;
-      color: #8892b0;
+      font-size: 0.82rem;
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: 0;
+      color: var(--ft-text-muted);
       margin-top: 4px;
     }
 
     ion-card-content {
-      padding-top: 8px;
+      padding: 12px 18px 18px;
     }
 
     .workout-list {
@@ -132,83 +135,61 @@ const DAY_NAMES: Record<number, string> = {
     }
 
     .workout-item {
-      background: rgba(255, 255, 255, 0.04);
-      border-radius: 8px;
-      padding: 10px 14px;
+      background: var(--ft-bg-elevated);
+      border-radius: var(--ft-radius);
+      padding: 12px 14px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      border: 1px solid rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--ft-border);
     }
 
     .workout-item-info {
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 4px;
     }
 
     .workout-name {
-      font-size: 0.9rem;
+      font-size: 0.92rem;
       font-weight: 600;
-      color: #e0e0e0;
+      color: var(--ft-text);
     }
 
     .workout-day {
-      font-size: 0.78rem;
-      color: #e94560;
-      font-weight: 500;
+      align-self: flex-start;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--ft-accent);
+      background: var(--ft-accent-soft);
+      padding: 2px 8px;
+      border-radius: 6px;
+      letter-spacing: 0.02em;
     }
 
     .workout-item ion-icon {
-      color: #4a5568;
+      color: var(--ft-text-faint);
       font-size: 1rem;
     }
 
-    .empty-state {
-      text-align: center;
-      padding: 60px 32px;
-      color: #8892b0;
-    }
-
-    .empty-state ion-icon {
-      font-size: 3rem;
-      color: #2d3748;
-      display: block;
-      margin-bottom: 16px;
-    }
-
-    .empty-state p {
+    .plan-empty {
+      color: var(--ft-text-faint);
+      font-size: 0.85rem;
       margin: 0;
-      font-size: 0.9rem;
     }
 
     .skeleton-card {
-      --background: #16213e;
-      border: 1px solid rgba(233, 69, 96, 0.1);
-      border-radius: 12px;
-      margin: 8px 16px;
-      padding: 16px;
-    }
-
-    ion-skeleton-text {
-      --background: rgba(255, 255, 255, 0.08);
-      --background-rgb: 255, 255, 255;
-      border-radius: 4px;
-    }
-
-    .plan-count-badge {
-      --background: rgba(233, 69, 96, 0.15);
-      --color: #e94560;
-      font-size: 0.75rem;
-      font-weight: 600;
-      padding: 4px 10px;
-      border-radius: 20px;
+      background: var(--ft-surface);
+      border: 1px solid var(--ft-border);
+      border-radius: var(--ft-radius-lg);
+      margin: 10px 16px;
+      padding: 18px;
     }
   `],
   template: `
     <ion-header [translucent]="false">
       <ion-toolbar>
-        <ion-title>Fit<span class="title-accent">Tech</span> — Treinos</ion-title>
+        <ion-title>Fit<span class="title-accent">Mob</span> · Treinos</ion-title>
       </ion-toolbar>
     </ion-header>
 
@@ -222,18 +203,18 @@ const DAY_NAMES: Record<number, string> = {
           <div class="skeleton-card">
             <ion-skeleton-text [animated]="true" style="width: 60%; height: 18px; margin-bottom: 8px;"></ion-skeleton-text>
             <ion-skeleton-text [animated]="true" style="width: 80%; height: 14px; margin-bottom: 16px;"></ion-skeleton-text>
-            <ion-skeleton-text [animated]="true" style="width: 100%; height: 40px;"></ion-skeleton-text>
+            <ion-skeleton-text [animated]="true" style="width: 100%; height: 44px;"></ion-skeleton-text>
           </div>
         }
       } @else if (workoutPlans().length === 0) {
         <div class="empty-state">
-          <ion-icon name="information-circle"></ion-icon>
+          <div class="empty-icon"><ion-icon name="information-circle"></ion-icon></div>
           <p>Nenhum plano de treino encontrado.</p>
         </div>
       } @else {
         <div class="section-header">
-          <ion-icon name="flame"></ion-icon>
-          <h2>Planos de Treino ({{ workoutPlans().length }})</h2>
+          <h2>Planos de Treino</h2>
+          <span class="plan-count-badge">{{ workoutPlans().length }}</span>
         </div>
 
         @for (plan of workoutPlans(); track plan.id) {
@@ -258,7 +239,7 @@ const DAY_NAMES: Record<number, string> = {
                   }
                 </div>
               } @else {
-                <p style="color: #6b7280; font-size: 0.85rem; margin: 0;">
+                <p class="plan-empty">
                   Nenhum treino cadastrado neste plano.
                 </p>
               }
@@ -309,7 +290,7 @@ export class TreinosPage implements OnInit {
     setTimeout(() => event.detail.complete(), 1000);
   }
 
-  getWorkoutsForPlan(planId: number): Workout[] {
+  getWorkoutsForPlan(planId: string): Workout[] {
     return this.workouts().filter(w => w.workoutPlanId === planId);
   }
 

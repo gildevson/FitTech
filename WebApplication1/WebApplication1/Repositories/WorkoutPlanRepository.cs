@@ -16,7 +16,7 @@ public class WorkoutPlanRepository : IWorkoutPlanRepository
             "SELECT id, name, description, created_at AS CreatedAt FROM workout_plans ORDER BY name");
     }
 
-    public async Task<WorkoutPlan?> GetByIdAsync(int id)
+    public async Task<WorkoutPlan?> GetByIdAsync(Guid id)
     {
         using var conn = _connectionFactory.CreateConnection();
         return await conn.QueryFirstOrDefaultAsync<WorkoutPlan>(
@@ -24,10 +24,10 @@ public class WorkoutPlanRepository : IWorkoutPlanRepository
             new { Id = id });
     }
 
-    public async Task<int> CreateAsync(WorkoutPlan plan)
+    public async Task<Guid> CreateAsync(WorkoutPlan plan)
     {
         using var conn = _connectionFactory.CreateConnection();
-        return await conn.ExecuteScalarAsync<int>(
+        return await conn.ExecuteScalarAsync<Guid>(
             "INSERT INTO workout_plans (name, description) VALUES (@Name, @Description) RETURNING id",
             plan);
     }
@@ -41,7 +41,7 @@ public class WorkoutPlanRepository : IWorkoutPlanRepository
         return rows > 0;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(Guid id)
     {
         using var conn = _connectionFactory.CreateConnection();
         var rows = await conn.ExecuteAsync(

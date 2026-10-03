@@ -16,7 +16,7 @@ public class UserRepository : IUserRepository
             "SELECT id, name, email, password_hash AS PasswordHash, role, is_active AS IsActive, created_at AS CreatedAt FROM users ORDER BY name");
     }
 
-    public async Task<User?> GetByIdAsync(int id)
+    public async Task<User?> GetByIdAsync(Guid id)
     {
         using var conn = _connectionFactory.CreateConnection();
         return await conn.QueryFirstOrDefaultAsync<User>(
@@ -32,10 +32,10 @@ public class UserRepository : IUserRepository
             new { Email = email });
     }
 
-    public async Task<int> CreateAsync(User user)
+    public async Task<Guid> CreateAsync(User user)
     {
         using var conn = _connectionFactory.CreateConnection();
-        return await conn.ExecuteScalarAsync<int>(
+        return await conn.ExecuteScalarAsync<Guid>(
             "INSERT INTO users (name, email, password_hash, role, is_active) VALUES (@Name, @Email, @PasswordHash, @Role, @IsActive) RETURNING id",
             user);
     }
@@ -49,14 +49,14 @@ public class UserRepository : IUserRepository
         return rows > 0;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(Guid id)
     {
         using var conn = _connectionFactory.CreateConnection();
         var rows = await conn.ExecuteAsync("DELETE FROM users WHERE id = @Id", new { Id = id });
         return rows > 0;
     }
 
-    public async Task<bool> ToggleActiveAsync(int id, bool isActive)
+    public async Task<bool> ToggleActiveAsync(Guid id, bool isActive)
     {
         using var conn = _connectionFactory.CreateConnection();
         var rows = await conn.ExecuteAsync(

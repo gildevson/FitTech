@@ -4,75 +4,43 @@ import { FormsModule } from '@angular/forms';
 import { WorkoutService } from '../../core/services/workout.service';
 import { WorkoutPlanService } from '../../core/services/workout-plan.service';
 import { Workout, WorkoutPlan } from '../../core/models';
+import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { ButtonComponent } from '../../shared/components/button/button.component';
+import { TableCardComponent } from '../../shared/components/table-card/table-card.component';
+import { BadgeComponent } from '../../shared/components/badge/badge.component';
+import { DrawerComponent } from '../../shared/components/drawer/drawer.component';
 
 const DAY_NAMES = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo'];
 
 @Component({
   selector: 'app-workouts',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PageHeaderComponent, ButtonComponent, TableCardComponent, BadgeComponent, DrawerComponent],
   styles: [`
-    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
-    .page-header h1 { font-size: 1.8rem; color: #fff; margin: 0; }
-    .btn-primary {
-      background: #e94560; color: #fff; border: none;
-      padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: background 0.2s;
-    }
-    .btn-primary:hover { background: #c73652; }
-    .btn-danger {
-      background: transparent; color: #e94560; border: 1px solid #e94560;
-      padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.82rem; transition: all 0.2s;
-    }
-    .btn-danger:hover { background: rgba(233,69,96,0.15); }
-    .btn-edit {
-      background: transparent; color: #7090e0; border: 1px solid #7090e0;
-      padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.82rem; margin-right: 8px; transition: all 0.2s;
-    }
-    .btn-edit:hover { background: rgba(112,144,224,0.15); }
-    .table-card { background: #16213e; border: 1px solid #0f3460; border-radius: 12px; overflow: hidden; }
-    table { width: 100%; border-collapse: collapse; }
-    thead { background: #0f3460; }
-    th { padding: 14px 16px; text-align: left; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.5px; color: #8090c0; }
-    td { padding: 14px 16px; color: #d0d0e8; font-size: 0.92rem; border-top: 1px solid rgba(255,255,255,0.05); }
-    tr:hover td { background: rgba(255,255,255,0.02); }
-    .empty-state { text-align: center; padding: 40px; color: #6060a0; }
-    .loading { text-align: center; padding: 40px; color: #6060a0; }
-    .alert { padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 0.9rem; }
-    .alert-success { background: rgba(46,213,115,0.1); border: 1px solid rgba(46,213,115,0.3); color: #2ed573; }
-    .alert-error { background: rgba(233,69,96,0.1); border: 1px solid rgba(233,69,96,0.3); color: #e94560; }
-    .badge { background: #0f3460; color: #8090c0; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; }
-    .badge-day { background: rgba(233,69,96,0.15); color: #e94560; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; }
-    .modal-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.7);
-      display: flex; align-items: center; justify-content: center; z-index: 1000;
-    }
-    .modal {
-      background: #16213e; border: 1px solid #0f3460; border-radius: 12px;
-      padding: 32px; width: 500px; max-width: 95vw;
-    }
-    .modal h2 { margin: 0 0 24px 0; color: #fff; font-size: 1.3rem; }
+    .empty-state { text-align: center; padding: 40px; color: var(--color-text-muted); }
+    .loading { text-align: center; padding: 40px; color: var(--color-text-muted); }
+    .alert { padding: 12px 16px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 0.9rem; }
+    .alert-success { background: var(--color-success-soft); border: 1px solid var(--color-success); color: var(--color-success); }
+    .alert-error { background: var(--color-danger-soft); border: 1px solid var(--color-danger); color: var(--color-danger); }
+    .clickable-row { cursor: pointer; }
+    .clickable-row:hover { background: var(--color-surface-hover); }
+    .drawer-title { margin: 0 0 24px 0; color: var(--color-text); font-size: 1.25rem; }
     .form-group { margin-bottom: 18px; }
-    .form-group label { display: block; margin-bottom: 6px; color: #8090c0; font-size: 0.85rem; }
+    .form-group label { display: block; margin-bottom: 6px; color: var(--color-text-muted); font-size: 0.85rem; font-weight: 500; }
     .form-group input, .form-group select {
       width: 100%; box-sizing: border-box;
-      background: #1a1a2e; border: 1px solid #0f3460; border-radius: 8px;
-      color: #e0e0e0; padding: 10px 14px; font-size: 0.92rem; transition: border-color 0.2s;
+      background: var(--color-card-bg); border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+      color: var(--color-text); padding: 10px 14px; font-size: 0.92rem; font-family: var(--font-family);
+      transition: border-color 0.15s;
     }
-    .form-group input:focus, .form-group select:focus { outline: none; border-color: #e94560; }
-    .form-group select option { background: #1a1a2e; }
+    .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--color-primary); }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; }
-    .btn-cancel {
-      background: transparent; color: #8090c0; border: 1px solid #0f3460;
-      padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 0.9rem;
-    }
-    .btn-cancel:hover { border-color: #8090c0; }
   `],
   template: `
-    <div class="page-header">
-      <h1>Treinos</h1>
-      <button class="btn-primary" (click)="openCreate()">+ Novo Treino</button>
-    </div>
+    <ui-page-header title="Treinos">
+      <ui-button (click)="openCreate()">+ Novo Treino</ui-button>
+    </ui-page-header>
 
     @if (successMsg()) {
       <div class="alert alert-success">{{ successMsg() }}</div>
@@ -81,81 +49,75 @@ const DAY_NAMES = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feir
       <div class="alert alert-error">{{ errorMsg() }}</div>
     }
 
-    <div class="table-card">
+    <ui-table-card>
       @if (loading()) {
         <div class="loading">Carregando...</div>
       } @else if (items().length === 0) {
         <div class="empty-state">Nenhum treino cadastrado.</div>
       } @else {
-        <table>
+        <table class="ui-table">
           <thead>
             <tr>
-              <th>#</th>
               <th>Nome</th>
               <th>Plano</th>
               <th>Dia da Semana</th>
               <th>Ordem</th>
-              <th>Ações</th>
             </tr>
           </thead>
           <tbody>
             @for (item of items(); track item.id) {
-              <tr>
-                <td>{{ item.id }}</td>
+              <tr class="clickable-row" (click)="openEdit(item)">
                 <td>{{ item.name }}</td>
-                <td><span class="badge">{{ item.workoutPlanName || getPlanName(item.workoutPlanId) }}</span></td>
-                <td><span class="badge-day">{{ getDayName(item.dayOfWeek) }}</span></td>
+                <td><ui-badge variant="primary">{{ item.workoutPlanName || getPlanName(item.workoutPlanId) }}</ui-badge></td>
+                <td><ui-badge variant="warning">{{ getDayName(item.dayOfWeek) }}</ui-badge></td>
                 <td>{{ item.orderIndex }}</td>
-                <td>
-                  <button class="btn-edit" (click)="openEdit(item)">Editar</button>
-                  <button class="btn-danger" (click)="confirmDelete(item)">Excluir</button>
-                </td>
               </tr>
             }
           </tbody>
         </table>
       }
-    </div>
+    </ui-table-card>
 
     @if (showModal()) {
-      <div class="modal-overlay" (click)="closeModal()">
-        <div class="modal" (click)="$event.stopPropagation()">
-          <h2>{{ editingId() ? 'Editar Treino' : 'Novo Treino' }}</h2>
+      <ui-drawer size="md" (close)="closeModal()">
+        <h2 class="drawer-title">{{ editingId() ? 'Editar Treino' : 'Novo Treino' }}</h2>
+        <div class="form-group">
+          <label>Nome *</label>
+          <input type="text" [(ngModel)]="form.name" placeholder="Ex: Treino A - Peito e Tríceps..." />
+        </div>
+        <div class="form-group">
+          <label>Plano de Treino *</label>
+          <select [(ngModel)]="form.workoutPlanId">
+            <option [ngValue]="''" disabled>Selecione...</option>
+            @for (plan of workoutPlans(); track plan.id) {
+              <option [ngValue]="plan.id">{{ plan.name }}</option>
+            }
+          </select>
+        </div>
+        <div class="form-row">
           <div class="form-group">
-            <label>Nome *</label>
-            <input type="text" [(ngModel)]="form.name" placeholder="Ex: Treino A - Peito e Tríceps..." />
-          </div>
-          <div class="form-group">
-            <label>Plano de Treino *</label>
-            <select [(ngModel)]="form.workoutPlanId">
-              <option [ngValue]="0" disabled>Selecione...</option>
-              @for (plan of workoutPlans(); track plan.id) {
-                <option [ngValue]="plan.id">{{ plan.name }}</option>
+            <label>Dia da Semana *</label>
+            <select [(ngModel)]="form.dayOfWeek">
+              @for (day of days; track day.value) {
+                <option [ngValue]="day.value">{{ day.label }}</option>
               }
             </select>
           </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label>Dia da Semana *</label>
-              <select [(ngModel)]="form.dayOfWeek">
-                @for (day of days; track day.value) {
-                  <option [ngValue]="day.value">{{ day.label }}</option>
-                }
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Índice de Ordem</label>
-              <input type="number" [(ngModel)]="form.orderIndex" min="0" />
-            </div>
-          </div>
-          <div class="modal-actions">
-            <button class="btn-cancel" (click)="closeModal()">Cancelar</button>
-            <button class="btn-primary" (click)="save()" [disabled]="saving()">
-              {{ saving() ? 'Salvando...' : 'Salvar' }}
-            </button>
+          <div class="form-group">
+            <label>Índice de Ordem</label>
+            <input type="number" [(ngModel)]="form.orderIndex" min="0" />
           </div>
         </div>
-      </div>
+        <div class="modal-actions">
+          @if (editingId()) {
+            <ui-button variant="danger" (click)="confirmDelete()" style="margin-right: auto;">Excluir</ui-button>
+          }
+          <ui-button variant="ghost" (click)="closeModal()">Cancelar</ui-button>
+          <ui-button (click)="save()" [disabled]="saving()">
+            {{ saving() ? 'Salvando...' : 'Salvar' }}
+          </ui-button>
+        </div>
+      </ui-drawer>
     }
   `
 })
@@ -167,14 +129,14 @@ export class WorkoutsComponent implements OnInit {
   workoutPlans = signal<WorkoutPlan[]>([]);
   loading = signal(true);
   showModal = signal(false);
-  editingId = signal<number | null>(null);
+  editingId = signal<string | null>(null);
   saving = signal(false);
   successMsg = signal('');
   errorMsg = signal('');
 
   days = DAY_NAMES.map((label, i) => ({ value: i, label }));
 
-  form = { name: '', workoutPlanId: 0, dayOfWeek: 0, orderIndex: 0 };
+  form = { name: '', workoutPlanId: '', dayOfWeek: 0, orderIndex: 0 };
 
   ngOnInit() {
     this.workoutPlanService.getAll().subscribe({ next: (data) => this.workoutPlans.set(data) });
@@ -193,13 +155,13 @@ export class WorkoutsComponent implements OnInit {
     return DAY_NAMES[day] ?? String(day);
   }
 
-  getPlanName(id: number): string {
-    return this.workoutPlans().find(p => p.id === id)?.name || String(id);
+  getPlanName(id: string): string {
+    return this.workoutPlans().find(p => p.id === id)?.name || id;
   }
 
   openCreate() {
     this.editingId.set(null);
-    this.form = { name: '', workoutPlanId: 0, dayOfWeek: 0, orderIndex: 0 };
+    this.form = { name: '', workoutPlanId: '', dayOfWeek: 0, orderIndex: 0 };
     this.showModal.set(true);
   }
 
@@ -239,10 +201,13 @@ export class WorkoutsComponent implements OnInit {
     });
   }
 
-  confirmDelete(item: Workout) {
-    if (!confirm(`Excluir "${item.name}"?`)) return;
-    this.workoutService.delete(item.id).subscribe({
+  confirmDelete() {
+    const id = this.editingId();
+    if (!id) return;
+    if (!confirm(`Excluir "${this.form.name}"?`)) return;
+    this.workoutService.delete(id).subscribe({
       next: () => {
+        this.showModal.set(false);
         this.successMsg.set('Treino excluído!');
         setTimeout(() => this.successMsg.set(''), 3000);
         this.load();

@@ -11,7 +11,7 @@ export class MuscleGroupService {
     return this.api.get<MuscleGroup[]>('/api/musclegroups');
   }
 
-  getById(id: number): Observable<MuscleGroup> {
+  getById(id: string): Observable<MuscleGroup> {
     return this.api.get<MuscleGroup>(`/api/musclegroups/${id}`);
   }
 
@@ -19,11 +19,11 @@ export class MuscleGroupService {
     return this.api.post<MuscleGroup>('/api/musclegroups', data);
   }
 
-  update(id: number, data: Partial<MuscleGroup>): Observable<MuscleGroup> {
+  update(id: string, data: Partial<MuscleGroup>): Observable<MuscleGroup> {
     return this.api.put<MuscleGroup>(`/api/musclegroups/${id}`, data);
   }
 
-  delete(id: number): Observable<void> {
+  delete(id: string): Observable<void> {
     return this.api.delete<void>(`/api/musclegroups/${id}`);
   }
 }

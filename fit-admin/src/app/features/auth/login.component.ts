@@ -2,22 +2,23 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { ButtonComponent } from '../../shared/components/button/button.component';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, ButtonComponent],
   template: `
     <div class="login-container">
       <div class="login-card">
         <div class="logo">
-          <h1>FitTech</h1>
+          <img src="logo-gordofit.png" alt="GordoFit" />
           <p>Painel Administrativo</p>
         </div>
         <form (ngSubmit)="login()">
           <div class="field">
             <label>Email</label>
-            <input type="email" [(ngModel)]="email" name="email" placeholder="admin@fittech.com" required />
+            <input type="email" [(ngModel)]="email" name="email" placeholder="admin@gordofit.com" required />
           </div>
           <div class="field">
             <label>Senha</label>
@@ -26,9 +27,9 @@ import { AuthService } from '../../core/services/auth.service';
           @if (error()) {
             <div class="error-msg">{{ error() }}</div>
           }
-          <button type="submit" [disabled]="loading()">
+          <ui-button type="submit" [disabled]="loading()">
             {{ loading() ? 'Entrando...' : 'Entrar' }}
-          </button>
+          </ui-button>
         </form>
       </div>
     </div>
@@ -39,29 +40,28 @@ import { AuthService } from '../../core/services/auth.service';
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #1a1a2e;
+      background: var(--color-sidebar-bg);
     }
     .login-card {
-      background: #16213e;
-      border-radius: 12px;
+      background: var(--color-card-bg);
+      border-radius: var(--radius-lg);
       padding: 48px;
       width: 100%;
       max-width: 420px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+      box-shadow: var(--shadow-lg);
     }
     .logo {
       text-align: center;
       margin-bottom: 40px;
     }
-    .logo h1 {
-      color: #e94560;
-      font-size: 2.5rem;
-      font-weight: 800;
-      margin: 0;
-      letter-spacing: 2px;
+    .logo img {
+      width: 96px;
+      height: 96px;
+      object-fit: contain;
+      border-radius: 16px;
     }
     .logo p {
-      color: #8892b0;
+      color: var(--color-text-muted);
       margin: 4px 0 0;
       font-size: 0.9rem;
     }
@@ -70,7 +70,7 @@ import { AuthService } from '../../core/services/auth.service';
     }
     label {
       display: block;
-      color: #ccd6f6;
+      color: var(--color-text-muted);
       font-size: 0.85rem;
       margin-bottom: 6px;
       font-weight: 500;
@@ -78,40 +78,36 @@ import { AuthService } from '../../core/services/auth.service';
     input {
       width: 100%;
       padding: 12px 16px;
-      background: #0f3460;
-      border: 1px solid #1a4a7e;
-      border-radius: 8px;
-      color: #fff;
+      background: var(--color-card-bg);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      color: var(--color-text);
       font-size: 0.95rem;
+      font-family: var(--font-family);
       box-sizing: border-box;
-      transition: border-color 0.2s;
+      transition: border-color 0.15s;
     }
     input:focus {
       outline: none;
-      border-color: #e94560;
+      border-color: var(--color-primary);
     }
-    input::placeholder { color: #4a5568; }
-    button {
+    input::placeholder { color: var(--color-text-muted); }
+    ui-button {
+      display: block;
       width: 100%;
-      padding: 14px;
-      background: #e94560;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
       margin-top: 8px;
-      transition: background 0.2s;
     }
-    button:hover:not(:disabled) { background: #c73652; }
-    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    ui-button ::ng-deep button {
+      width: 100%;
+      padding: 13px;
+      font-size: 0.95rem;
+    }
     .error-msg {
-      background: rgba(233,69,96,0.15);
-      border: 1px solid rgba(233,69,96,0.4);
-      color: #e94560;
+      background: var(--color-danger-soft);
+      border: 1px solid var(--color-danger);
+      color: var(--color-danger);
       padding: 10px 14px;
-      border-radius: 6px;
+      border-radius: var(--radius-sm);
       font-size: 0.85rem;
       margin-bottom: 16px;
     }

@@ -1,82 +1,65 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ExerciseService } from '../../core/services/exercise.service';
 import { MuscleGroupService } from '../../core/services/muscle-group.service';
 import { Exercise, MuscleGroup } from '../../core/models';
+import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { ButtonComponent } from '../../shared/components/button/button.component';
+import { TableCardComponent } from '../../shared/components/table-card/table-card.component';
+import { BadgeComponent } from '../../shared/components/badge/badge.component';
+import { PaginationComponent } from '../../shared/components/pagination/pagination.component';
+import { LoadingOverlayComponent } from '../../shared/components/loading-overlay/loading-overlay.component';
+import { FilterBarComponent } from '../../shared/components/filter-bar/filter-bar.component';
+import { DrawerComponent } from '../../shared/components/drawer/drawer.component';
 
 @Component({
   selector: 'app-exercises',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PageHeaderComponent, ButtonComponent, TableCardComponent, BadgeComponent, PaginationComponent, LoadingOverlayComponent, FilterBarComponent, DrawerComponent],
   styles: [`
-    .page-header {
-      display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px;
-    }
-    .page-header h1 { font-size: 1.8rem; color: #fff; margin: 0; }
-    .btn-primary {
-      background: #e94560; color: #fff; border: none;
-      padding: 10px 20px; border-radius: 8px; cursor: pointer;
-      font-size: 0.9rem; font-weight: 600; transition: background 0.2s;
-    }
-    .btn-primary:hover { background: #c73652; }
-    .btn-danger {
-      background: transparent; color: #e94560; border: 1px solid #e94560;
-      padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.82rem; transition: all 0.2s;
-    }
-    .btn-danger:hover { background: rgba(233,69,96,0.15); }
-    .btn-edit {
-      background: transparent; color: #7090e0; border: 1px solid #7090e0;
-      padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.82rem;
-      margin-right: 8px; transition: all 0.2s;
-    }
-    .btn-edit:hover { background: rgba(112,144,224,0.15); }
-    .table-card { background: #16213e; border: 1px solid #0f3460; border-radius: 12px; overflow: hidden; }
-    table { width: 100%; border-collapse: collapse; }
-    thead { background: #0f3460; }
-    th { padding: 14px 16px; text-align: left; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.5px; color: #8090c0; }
-    td { padding: 14px 16px; color: #d0d0e8; font-size: 0.92rem; border-top: 1px solid rgba(255,255,255,0.05); }
-    tr:hover td { background: rgba(255,255,255,0.02); }
-    .empty-state { text-align: center; padding: 40px; color: #6060a0; }
-    .loading { text-align: center; padding: 40px; color: #6060a0; }
-    .alert { padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 0.9rem; }
-    .alert-success { background: rgba(46,213,115,0.1); border: 1px solid rgba(46,213,115,0.3); color: #2ed573; }
-    .alert-error { background: rgba(233,69,96,0.1); border: 1px solid rgba(233,69,96,0.3); color: #e94560; }
-    .badge { background: #0f3460; color: #8090c0; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; }
-    .img-thumb { width: 40px; height: 40px; object-fit: cover; border-radius: 6px; border: 1px solid #0f3460; }
-    .modal-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.7);
-      display: flex; align-items: center; justify-content: center; z-index: 1000;
-    }
-    .modal {
-      background: #16213e; border: 1px solid #0f3460; border-radius: 12px;
-      padding: 32px; width: 500px; max-width: 95vw; max-height: 90vh; overflow-y: auto;
-    }
-    .modal h2 { margin: 0 0 24px 0; color: #fff; font-size: 1.3rem; }
+    .empty-state { text-align: center; padding: 40px; color: var(--color-text-muted); }
+    .loading { text-align: center; padding: 40px; color: var(--color-text-muted); }
+    .alert { padding: 12px 16px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 0.9rem; }
+    .alert-success { background: var(--color-success-soft); border: 1px solid var(--color-success); color: var(--color-success); }
+    .alert-error { background: var(--color-danger-soft); border: 1px solid var(--color-danger); color: var(--color-danger); }
+    .img-thumb { width: 40px; height: 40px; object-fit: cover; border-radius: 6px; border: 1px solid var(--color-border); }
+    .clickable-row { cursor: pointer; }
+    .clickable-row:hover { background: var(--color-surface-hover); }
+    .drawer-title { margin: 0 0 24px 0; color: var(--color-text); font-size: 1.25rem; }
     .form-group { margin-bottom: 18px; }
-    .form-group label { display: block; margin-bottom: 6px; color: #8090c0; font-size: 0.85rem; }
+    .form-group label { display: block; margin-bottom: 6px; color: var(--color-text-muted); font-size: 0.85rem; font-weight: 500; }
     .form-group input, .form-group textarea, .form-group select {
       width: 100%; box-sizing: border-box;
-      background: #1a1a2e; border: 1px solid #0f3460; border-radius: 8px;
-      color: #e0e0e0; padding: 10px 14px; font-size: 0.92rem; transition: border-color 0.2s;
+      background: var(--color-card-bg); border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+      color: var(--color-text); padding: 10px 14px; font-size: 0.92rem; font-family: var(--font-family);
+      transition: border-color 0.15s;
     }
     .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
-      outline: none; border-color: #e94560;
+      outline: none; border-color: var(--color-primary);
     }
-    .form-group select option { background: #1a1a2e; }
     .form-group textarea { resize: vertical; min-height: 80px; }
     .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; }
-    .btn-cancel {
-      background: transparent; color: #8090c0; border: 1px solid #0f3460;
-      padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 0.9rem;
+    .img-preview {
+      width: 100%; aspect-ratio: 16 / 9; height: auto; display: flex; align-items: center; justify-content: center;
+      background: var(--color-surface-hover); border: 1px dashed var(--color-border); border-radius: var(--radius-sm);
+      overflow: hidden; margin-bottom: 18px;
     }
-    .btn-cancel:hover { border-color: #8090c0; }
+    .img-preview img { width: 100%; height: 100%; object-fit: contain; }
+    .img-preview-empty { color: var(--color-text-muted); font-size: 0.85rem; text-align: center; padding: 16px; }
+    .filter-actions { min-width: 0; }
+    .filter-actions-row { display: flex; gap: 10px; }
+    .filter-clear {
+      background: transparent; border: none;
+      color: var(--color-text-muted); padding: 10px 4px; font-size: 0.85rem; font-weight: 500; cursor: pointer;
+      transition: color 0.15s;
+    }
+    .filter-clear:hover { color: var(--color-primary); text-decoration: underline; }
   `],
   template: `
-    <div class="page-header">
-      <h1>Exercícios</h1>
-      <button class="btn-primary" (click)="openCreate()">+ Novo Exercício</button>
-    </div>
+    <ui-page-header title="Exercícios">
+      <ui-button (click)="openCreate()">+ Novo Exercício</ui-button>
+    </ui-page-header>
 
     @if (successMsg()) {
       <div class="alert alert-success">{{ successMsg() }}</div>
@@ -85,81 +68,120 @@ import { Exercise, MuscleGroup } from '../../core/models';
       <div class="alert alert-error">{{ errorMsg() }}</div>
     }
 
-    <div class="table-card">
+    <ui-filter-bar>
+      <div class="ui-filter-field">
+        <label>Nome</label>
+        <input type="text" [(ngModel)]="nameDraft" (keyup.enter)="applyFilters()" placeholder="Buscar por nome..." />
+      </div>
+      <div class="ui-filter-field">
+        <label>Grupo Muscular</label>
+        <select [(ngModel)]="muscleGroupDraft">
+          <option [ngValue]="''">Todos</option>
+          @for (mg of muscleGroups(); track mg.id) {
+            <option [ngValue]="mg.id">{{ mg.name }}</option>
+          }
+        </select>
+      </div>
+      <div class="ui-filter-field filter-actions">
+        <label>&nbsp;</label>
+        <div class="filter-actions-row">
+          <ui-button (click)="applyFilters()" [disabled]="pageLoading()">
+            {{ pageLoading() ? 'Buscando...' : 'Buscar' }}
+          </ui-button>
+          @if (nameFilter() || muscleGroupFilter()) {
+            <button type="button" class="filter-clear" (click)="clearFilters()">Limpar filtros</button>
+          }
+        </div>
+      </div>
+    </ui-filter-bar>
+
+    <ui-table-card>
       @if (loading()) {
         <div class="loading">Carregando...</div>
       } @else if (items().length === 0) {
         <div class="empty-state">Nenhum exercício cadastrado.</div>
+      } @else if (filteredItems().length === 0) {
+        <div class="empty-state">Nenhum exercício encontrado para o filtro aplicado.</div>
       } @else {
-        <table>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Imagem</th>
-              <th>Nome</th>
-              <th>Grupo Muscular</th>
-              <th>Descrição</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (item of items(); track item.id) {
+        <ui-loading-overlay [loading]="pageLoading()">
+          <table class="ui-table">
+            <thead>
               <tr>
-                <td>{{ item.id }}</td>
-                <td>
-                  @if (item.imageUrl) {
-                    <img [src]="item.imageUrl" class="img-thumb" [alt]="item.name" />
-                  } @else {
-                    <span style="color:#555577">—</span>
-                  }
-                </td>
-                <td>{{ item.name }}</td>
-                <td><span class="badge">{{ item.muscleGroupName || getMuscleGroupName(item.muscleGroupId) }}</span></td>
-                <td>{{ item.description || '—' }}</td>
-                <td>
-                  <button class="btn-edit" (click)="openEdit(item)">Editar</button>
-                  <button class="btn-danger" (click)="confirmDelete(item)">Excluir</button>
-                </td>
+                <th>Imagem</th>
+                <th>Nome</th>
+                <th>Grupo Muscular</th>
+                <th>Descrição</th>
               </tr>
-            }
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              @for (item of pagedItems(); track item.id) {
+                <tr class="clickable-row" (click)="openEdit(item)">
+                  <td>
+                    @if (item.imageUrl) {
+                      <img [src]="item.imageUrl" class="img-thumb" [alt]="item.name" />
+                    } @else {
+                      <span style="color:var(--color-text-muted)">—</span>
+                    }
+                  </td>
+                  <td>{{ item.name }}</td>
+                  <td><ui-badge variant="primary">{{ item.muscleGroupName || getMuscleGroupName(item.muscleGroupId) }}</ui-badge></td>
+                  <td>{{ item.description || '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </ui-loading-overlay>
+        <ui-pagination
+          [total]="filteredItems().length"
+          [page]="page()"
+          [pageSize]="pageSize"
+          [loading]="pageLoading()"
+          (pageChange)="onPageChange($event)"
+        />
       }
-    </div>
+    </ui-table-card>
 
     @if (showModal()) {
-      <div class="modal-overlay" (click)="closeModal()">
-        <div class="modal" (click)="$event.stopPropagation()">
-          <h2>{{ editingId() ? 'Editar Exercício' : 'Novo Exercício' }}</h2>
-          <div class="form-group">
-            <label>Nome *</label>
-            <input type="text" [(ngModel)]="form.name" placeholder="Ex: Supino Reto..." />
-          </div>
-          <div class="form-group">
-            <label>Grupo Muscular *</label>
-            <select [(ngModel)]="form.muscleGroupId">
-              <option [ngValue]="0" disabled>Selecione...</option>
-              @for (mg of muscleGroups(); track mg.id) {
-                <option [ngValue]="mg.id">{{ mg.name }}</option>
-              }
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Descrição</label>
-            <textarea [(ngModel)]="form.description" placeholder="Descrição opcional..."></textarea>
-          </div>
-          <div class="form-group">
-            <label>URL da Imagem</label>
-            <input type="text" [(ngModel)]="form.imageUrl" placeholder="https://..." />
-          </div>
-          <div class="modal-actions">
-            <button class="btn-cancel" (click)="closeModal()">Cancelar</button>
-            <button class="btn-primary" (click)="save()" [disabled]="saving()">
-              {{ saving() ? 'Salvando...' : 'Salvar' }}
-            </button>
-          </div>
+      <ui-drawer size="lg" (close)="closeModal()">
+        <h2 class="drawer-title">{{ editingId() ? 'Editar Exercício' : 'Novo Exercício' }}</h2>
+        <div class="img-preview">
+          @if (form.imageUrl) {
+            <img [src]="form.imageUrl" [alt]="form.name" />
+          } @else {
+            <div class="img-preview-empty">Sem imagem de execução do exercício</div>
+          }
         </div>
-      </div>
+        <div class="form-group">
+          <label>Nome *</label>
+          <input type="text" [(ngModel)]="form.name" placeholder="Ex: Supino Reto..." />
+        </div>
+        <div class="form-group">
+          <label>Grupo Muscular *</label>
+          <select [(ngModel)]="form.muscleGroupId">
+            <option [ngValue]="''" disabled>Selecione...</option>
+            @for (mg of muscleGroups(); track mg.id) {
+              <option [ngValue]="mg.id">{{ mg.name }}</option>
+            }
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Descrição</label>
+          <textarea [(ngModel)]="form.description" placeholder="Descrição opcional..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>URL da Imagem</label>
+          <input type="text" [(ngModel)]="form.imageUrl" placeholder="https://..." />
+        </div>
+        <div class="modal-actions">
+          @if (editingId()) {
+            <ui-button variant="danger" (click)="deleteFromModal()" style="margin-right: auto;">Excluir</ui-button>
+          }
+          <ui-button variant="ghost" (click)="closeModal()">Cancelar</ui-button>
+          <ui-button (click)="save()" [disabled]="saving()">
+            {{ saving() ? 'Salvando...' : 'Salvar' }}
+          </ui-button>
+        </div>
+      </ui-drawer>
     }
   `
 })
@@ -171,12 +193,65 @@ export class ExercisesComponent implements OnInit {
   muscleGroups = signal<MuscleGroup[]>([]);
   loading = signal(true);
   showModal = signal(false);
-  editingId = signal<number | null>(null);
+  editingId = signal<string | null>(null);
   saving = signal(false);
   successMsg = signal('');
   errorMsg = signal('');
 
-  form = { name: '', description: '', muscleGroupId: 0, imageUrl: '' };
+  form = { name: '', description: '', muscleGroupId: '', imageUrl: '' };
+
+  nameDraft = '';
+  muscleGroupDraft = '';
+  nameFilter = signal('');
+  muscleGroupFilter = signal('');
+
+  filteredItems = computed(() => {
+    const name = this.nameFilter().trim().toLowerCase();
+    const muscleGroupId = this.muscleGroupFilter();
+    return this.items().filter(item => {
+      const matchesName = !name || item.name.toLowerCase().includes(name);
+      const matchesMuscleGroup = !muscleGroupId || item.muscleGroupId === muscleGroupId;
+      return matchesName && matchesMuscleGroup;
+    });
+  });
+
+  page = signal(1);
+  pageSize = 10;
+  pageLoading = signal(false);
+  pagedItems = computed(() => {
+    const start = (this.page() - 1) * this.pageSize;
+    return this.filteredItems().slice(start, start + this.pageSize);
+  });
+
+  applyFilters() {
+    this.pageLoading.set(true);
+    setTimeout(() => {
+      this.nameFilter.set(this.nameDraft);
+      this.muscleGroupFilter.set(this.muscleGroupDraft);
+      this.page.set(1);
+      this.pageLoading.set(false);
+    }, 400);
+  }
+
+  clearFilters() {
+    this.nameDraft = '';
+    this.muscleGroupDraft = '';
+    this.pageLoading.set(true);
+    setTimeout(() => {
+      this.nameFilter.set('');
+      this.muscleGroupFilter.set('');
+      this.page.set(1);
+      this.pageLoading.set(false);
+    }, 400);
+  }
+
+  onPageChange(newPage: number) {
+    this.pageLoading.set(true);
+    setTimeout(() => {
+      this.page.set(newPage);
+      this.pageLoading.set(false);
+    }, 400);
+  }
 
   ngOnInit() {
     this.muscleGroupService.getAll().subscribe({
@@ -188,18 +263,18 @@ export class ExercisesComponent implements OnInit {
   load() {
     this.loading.set(true);
     this.exerciseService.getAll().subscribe({
-      next: (data) => { this.items.set(data); this.loading.set(false); },
+      next: (data) => { this.items.set(data); this.page.set(1); this.loading.set(false); },
       error: () => { this.errorMsg.set('Erro ao carregar exercícios.'); this.loading.set(false); }
     });
   }
 
-  getMuscleGroupName(id: number): string {
-    return this.muscleGroups().find(mg => mg.id === id)?.name || String(id);
+  getMuscleGroupName(id: string): string {
+    return this.muscleGroups().find(mg => mg.id === id)?.name || id;
   }
 
   openCreate() {
     this.editingId.set(null);
-    this.form = { name: '', description: '', muscleGroupId: 0, imageUrl: '' };
+    this.form = { name: '', description: '', muscleGroupId: '', imageUrl: '' };
     this.showModal.set(true);
   }
 
@@ -245,15 +320,20 @@ export class ExercisesComponent implements OnInit {
     });
   }
 
-  confirmDelete(item: Exercise) {
-    if (!confirm(`Excluir "${item.name}"?`)) return;
-    this.exerciseService.delete(item.id).subscribe({
+  deleteFromModal() {
+    const id = this.editingId();
+    if (!id) return;
+    if (!confirm(`Excluir "${this.form.name}"?`)) return;
+    this.saving.set(true);
+    this.exerciseService.delete(id).subscribe({
       next: () => {
+        this.saving.set(false);
+        this.showModal.set(false);
         this.successMsg.set('Exercício excluído!');
         setTimeout(() => this.successMsg.set(''), 3000);
         this.load();
       },
-      error: () => this.errorMsg.set('Erro ao excluir.')
+      error: () => { this.saving.set(false); this.errorMsg.set('Erro ao excluir.'); }
     });
   }
 }

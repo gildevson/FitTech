@@ -1,12 +1,17 @@
 {
-  "name": "FitTech",
-  "short_name": "FitTech",
-  "theme_color": "#1a1a2e",
-  "background_color": "#1a1a2e",
+  "name": "FitMob",
+  "short_name": "FitMob",
+  "theme_color": "#0b1020",
+  "background_color": "#0b1020",
   "display": "standalone",
   "scope": "/",
   "start_url": "/",
   "icons": [
+    {
+      "src": "assets/icon/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
     {
       "src": "assets/icon/favicon.png",
       "sizes": "512x512",

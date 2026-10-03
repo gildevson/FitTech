@@ -16,7 +16,7 @@ public class MuscleGroupRepository : IMuscleGroupRepository
             "SELECT id, name, description, created_at AS CreatedAt FROM muscle_groups ORDER BY name");
     }
 
-    public async Task<MuscleGroup?> GetByIdAsync(int id)
+    public async Task<MuscleGroup?> GetByIdAsync(Guid id)
     {
         using var conn = _connectionFactory.CreateConnection();
         return await conn.QueryFirstOrDefaultAsync<MuscleGroup>(
@@ -24,10 +24,10 @@ public class MuscleGroupRepository : IMuscleGroupRepository
             new { Id = id });
     }
 
-    public async Task<int> CreateAsync(MuscleGroup muscleGroup)
+    public async Task<Guid> CreateAsync(MuscleGroup muscleGroup)
     {
         using var conn = _connectionFactory.CreateConnection();
-        return await conn.ExecuteScalarAsync<int>(
+        return await conn.ExecuteScalarAsync<Guid>(
             "INSERT INTO muscle_groups (name, description) VALUES (@Name, @Description) RETURNING id",
             muscleGroup);
     }
@@ -41,7 +41,7 @@ public class MuscleGroupRepository : IMuscleGroupRepository
         return rows > 0;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(Guid id)
     {
         using var conn = _connectionFactory.CreateConnection();
         var rows = await conn.ExecuteAsync(

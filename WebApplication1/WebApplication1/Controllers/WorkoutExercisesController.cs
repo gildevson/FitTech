@@ -12,11 +12,11 @@ public class WorkoutExercisesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetByWorkout([FromQuery] int workoutId) =>
+    public async Task<IActionResult> GetByWorkout([FromQuery] Guid workoutId) =>
         Ok(await _repository.GetByWorkoutAsync(workoutId));
 
-    [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetById(int id)
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetById(Guid id)
     {
         var item = await _repository.GetByIdAsync(id);
         return item is null ? NotFound() : Ok(item);
@@ -40,8 +40,8 @@ public class WorkoutExercisesController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id }, we);
     }
 
-    [HttpPut("{id:int}")]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdateWorkoutExerciseDto dto)
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateWorkoutExerciseDto dto)
     {
         var we = new WorkoutExercise
         {
@@ -56,8 +56,8 @@ public class WorkoutExercisesController : ControllerBase
         return updated ? NoContent() : NotFound();
     }
 
-    [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(int id)
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id)
     {
         var deleted = await _repository.DeleteAsync(id);
         return deleted ? NoContent() : NotFound();

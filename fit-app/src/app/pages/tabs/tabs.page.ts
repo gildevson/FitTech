@@ -22,26 +22,34 @@ import { barbell, flame, person } from 'ionicons/icons';
     IonRouterOutlet
   ],
   styles: [`
-    ion-tab-bar {
-      --background: #16213e;
-      --border: 1px solid rgba(233, 69, 96, 0.2);
-    }
-
     ion-tab-button {
-      --color: #8892b0;
-      --color-selected: #e94560;
       --background: transparent;
       --background-focused: transparent;
+      --ripple-color: transparent;
+      position: relative;
+      transition: color 0.15s;
+    }
+
+    ion-tab-button.tab-selected::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: 28px;
+      height: 3px;
+      transform: translateX(-50%);
+      border-radius: 0 0 3px 3px;
+      background: var(--ft-accent);
     }
 
     ion-tab-button ion-icon {
-      font-size: 1.5rem;
+      font-size: 1.4rem;
     }
 
     ion-tab-button ion-label {
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       font-weight: 600;
-      letter-spacing: 0.3px;
+      letter-spacing: 0.02em;
     }
   `],
   template: `
