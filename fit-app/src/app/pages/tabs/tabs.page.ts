@@ -8,7 +8,7 @@ import {
   IonRouterOutlet
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { barbell, flame, person } from 'ionicons/icons';
+import { barbell, flame, person, nutrition } from 'ionicons/icons';
 
 @Component({
   selector: 'app-tabs',
@@ -64,6 +64,10 @@ import { barbell, flame, person } from 'ionicons/icons';
           <ion-icon name="barbell"></ion-icon>
           <ion-label>Exercícios</ion-label>
         </ion-tab-button>
+        <ion-tab-button tab="dieta" href="/tabs/dieta">
+          <ion-icon name="nutrition"></ion-icon>
+          <ion-label>Dieta</ion-label>
+        </ion-tab-button>
         <ion-tab-button tab="perfil" href="/tabs/perfil">
           <ion-icon name="person"></ion-icon>
           <ion-label>Perfil</ion-label>
@@ -74,6 +78,6 @@ import { barbell, flame, person } from 'ionicons/icons';
 })
 export class TabsPage {
   constructor() {
-    addIcons({ barbell, flame, person });
+    addIcons({ barbell, flame, person, nutrition });
   }
 }

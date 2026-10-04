@@ -198,6 +198,11 @@ import { IconComponent } from '../components/icon/icon.component';
               <span class="nav-icon"><ui-icon name="users" /></span> Usuários
             </a>
           </li>
+          <li>
+            <a routerLink="/diets" routerLinkActive="active-link">
+              <span class="nav-icon">🥗</span> Dietas
+            </a>
+          </li>
         </ul>
         <div class="sidebar-footer">
           <div class="theme-toggle">

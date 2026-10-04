@@ -29,6 +29,10 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/perfil/perfil.page').then(m => m.PerfilPage)
       },
       {
+        path: 'dieta',
+        loadComponent: () => import('./pages/dieta/dieta.page').then(m => m.DietaPage)
+      },
+      {
         path: '',
         redirectTo: 'treinos',
         pathMatch: 'full'

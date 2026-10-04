@@ -65,3 +65,42 @@ export interface AppUser {
   isActive: boolean;
   createdAt: string;
 }
+
+export interface Diet {
+  id: string;
+  name: string;
+  description?: string;
+  createdAt: string;
+  meals: Meal[];
+}
+
+export interface Meal {
+  id: string;
+  dietId: string;
+  name: string;
+  mealOrder: number;
+  mealTime?: string;
+  foods: MealFood[];
+}
+
+export interface MealFood {
+  id: string;
+  mealId: string;
+  foodName: string;
+  quantityGrams: number;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  servingUnit?: string;
+  servingGrams?: number;
+}
+
+export interface FoodSearchResult {
+  name: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  code: string;
+}

@@ -67,5 +67,44 @@ public static class SqlScripts
             is_active BOOLEAN NOT NULL DEFAULT true,
             created_at TIMESTAMP DEFAULT NOW()
         );
+
+        CREATE TABLE IF NOT EXISTS diets (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            name VARCHAR(150) NOT NULL,
+            description TEXT,
+            created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+            created_at TIMESTAMP DEFAULT NOW()
+        );
+
+        CREATE TABLE IF NOT EXISTS meals (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            diet_id UUID REFERENCES diets(id) ON DELETE CASCADE,
+            name VARCHAR(100) NOT NULL,
+            meal_order INT NOT NULL DEFAULT 0
+        );
+
+        CREATE TABLE IF NOT EXISTS meal_foods (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            meal_id UUID REFERENCES meals(id) ON DELETE CASCADE,
+            food_name VARCHAR(200) NOT NULL,
+            quantity_grams DECIMAL(8,2) NOT NULL DEFAULT 100,
+            calories DECIMAL(8,2) NOT NULL DEFAULT 0,
+            protein DECIMAL(8,2) NOT NULL DEFAULT 0,
+            carbs DECIMAL(8,2) NOT NULL DEFAULT 0,
+            fat DECIMAL(8,2) NOT NULL DEFAULT 0,
+            open_food_facts_id VARCHAR(100)
+        );
+
+        CREATE TABLE IF NOT EXISTS user_diets (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+            diet_id UUID REFERENCES diets(id) ON DELETE CASCADE,
+            assigned_at TIMESTAMP DEFAULT NOW(),
+            UNIQUE(user_id, diet_id)
+        );
+
+        ALTER TABLE meal_foods ADD COLUMN IF NOT EXISTS serving_unit VARCHAR(50);
+        ALTER TABLE meal_foods ADD COLUMN IF NOT EXISTS serving_grams DECIMAL(8,2);
+        ALTER TABLE meals ADD COLUMN IF NOT EXISTS meal_time VARCHAR(5);
         """;
 }

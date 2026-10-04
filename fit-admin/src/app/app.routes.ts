@@ -16,6 +16,7 @@ export const routes: Routes = [
       { path: 'workout-plans', loadComponent: () => import('./features/workout-plans/workout-plans.component').then(m => m.WorkoutPlansComponent) },
       { path: 'workouts', loadComponent: () => import('./features/workouts/workouts.component').then(m => m.WorkoutsComponent) },
       { path: 'users', loadComponent: () => import('./features/users/users.component').then(m => m.UsersComponent) },
+      { path: 'diets', loadComponent: () => import('./features/diets/diets.component').then(m => m.DietsComponent) },
     ]
   }
 ];
