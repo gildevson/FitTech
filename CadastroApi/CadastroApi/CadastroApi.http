@@ -1,0 +1,44 @@
+@CadastroApi_HostAddress = https://localhost:7132
+
+### GET - listar funcionários
+GET {{CadastroApi_HostAddress}}/api/Funcionario
+Accept: application/json
+
+
+### POST - adicionar funcionário 1
+POST {{CadastroApi_HostAddress}}/api/Funcionario
+Content-Type: application/json
+
+{
+  "id": 1,
+  "nome": "Gilson",
+  "salario": 4500
+}
+
+###
+
+### POST - adicionar funcionário 2
+POST {{CadastroApi_HostAddress}}/api/Funcionario
+Content-Type: application/json
+
+{
+  "id": 2,
+  "nome": "Maria",
+  "salario": 4000
+}
+
+###
+
+### POST - adicionar funcionário 3
+POST {{CadastroApi_HostAddress}}/api/Funcionario
+Content-Type: application/json
+
+{
+  "id": 3,
+  "nome": "Alex",
+  "salario": 3000
+}
+
+
+### PUT - aumentar salário
+PUT {{CadastroApi_HostAddress}}/api/Funcionario/2/aumentar-salario?porcentagem=10

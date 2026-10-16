@@ -17,31 +17,23 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> GetAll()
     {
         var users = await _repository.GetAllAsync();
-        return Ok(users.Select(u => new UserResponseDto
-        {
-            Id = u.Id,
-            Name = u.Name,
-            Email = u.Email,
-            Role = u.Role,
-            IsActive = u.IsActive,
-            CreatedAt = u.CreatedAt
-        }));
+        return Ok(users.Select(ToDto));
     }
+
+    [HttpGet("stats/by-state")]
+    public async Task<IActionResult> CountByState() =>
+        Ok(await _repository.CountByStateAsync());
+
+    [HttpGet("stats/by-city")]
+    public async Task<IActionResult> CountByCity([FromQuery] string state) =>
+        Ok(await _repository.CountByCityAsync(state));
 
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id)
     {
         var user = await _repository.GetByIdAsync(id);
         if (user is null) return NotFound();
-        return Ok(new UserResponseDto
-        {
-            Id = user.Id,
-            Name = user.Name,
-            Email = user.Email,
-            Role = user.Role,
-            IsActive = user.IsActive,
-            CreatedAt = user.CreatedAt
-        });
+        return Ok(ToDto(user));
     }
 
     [HttpPost]
@@ -59,19 +51,12 @@ public class UsersController : ControllerBase
             Role = dto.Role,
             IsActive = true
         };
+        user.ApplyAddress(dto);
 
         var id = await _repository.CreateAsync(user);
         user.Id = id;
 
-        return CreatedAtAction(nameof(GetById), new { id }, new UserResponseDto
-        {
-            Id = user.Id,
-            Name = user.Name,
-            Email = user.Email,
-            Role = user.Role,
-            IsActive = user.IsActive,
-            CreatedAt = user.CreatedAt
-        });
+        return CreatedAtAction(nameof(GetById), new { id }, ToDto(user));
     }
 
     [HttpPut("{id:guid}")]
@@ -84,6 +69,7 @@ public class UsersController : ControllerBase
         user.Email = dto.Email;
         user.Role = dto.Role;
         user.IsActive = dto.IsActive;
+        user.ApplyAddress(dto);
 
         var updated = await _repository.UpdateAsync(user);
         return updated ? NoContent() : NotFound();
@@ -102,4 +88,21 @@ public class UsersController : ControllerBase
         var deleted = await _repository.DeleteAsync(id);
         return deleted ? NoContent() : NotFound();
     }
+
+    private static UserResponseDto ToDto(User u) => new()
+    {
+        Id = u.Id,
+        Name = u.Name,
+        Email = u.Email,
+        Role = u.Role,
+        IsActive = u.IsActive,
+        CreatedAt = u.CreatedAt,
+        ZipCode = u.ZipCode,
+        Street = u.Street,
+        AddressNumber = u.AddressNumber,
+        Complement = u.Complement,
+        Neighborhood = u.Neighborhood,
+        City = u.City,
+        State = u.State
+    };
 }

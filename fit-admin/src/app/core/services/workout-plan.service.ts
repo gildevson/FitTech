@@ -7,8 +7,8 @@ import { WorkoutPlan } from '../models';
 export class WorkoutPlanService {
   private api = inject(ApiService);
 
-  getAll(): Observable<WorkoutPlan[]> {
-    return this.api.get<WorkoutPlan[]>('/api/workoutplans');
+  getAll(systemOnly = true): Observable<WorkoutPlan[]> {
+    return this.api.get<WorkoutPlan[]>('/api/workoutplans', systemOnly ? { systemOnly: 'true' } : undefined);
   }
 
   getById(id: string): Observable<WorkoutPlan> {

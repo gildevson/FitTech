@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
@@ -28,7 +30,9 @@ public class AuthController : ControllerBase
             Token = token,
             Name = user.Name,
             Email = user.Email,
-            Role = user.Role
+            Role = user.Role,
+            UserId = user.Id,
+            Language = user.Language
         });
     }
 
@@ -55,8 +59,10 @@ public class AuthController : ControllerBase
             Email = email,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
             Role = "user",
-            IsActive = true
+            IsActive = true,
+            Language = NormalizeLanguage(dto.Language)
         };
+        user.ApplyAddress(dto);
         user.Id = await _userRepository.CreateAsync(user);
 
         return Ok(new LoginResponseDto
@@ -64,7 +70,28 @@ public class AuthController : ControllerBase
             Token = _jwtService.GenerateToken(user),
             Name = user.Name,
             Email = user.Email,
-            Role = user.Role
+            Role = user.Role,
+            UserId = user.Id,
+            Language = user.Language
         });
+    }
+
+    /// <summary>Salva o idioma preferido do usuário logado (vale em qualquer aparelho).</summary>
+    [Authorize]
+    [HttpPut("language")]
+    public async Task<IActionResult> UpdateLanguage([FromBody] UpdateLanguageDto dto)
+    {
+        var language = NormalizeLanguage(dto.Language);
+        if (language is null)
+            return BadRequest(new { message = "Idioma inválido. Use pt, en ou es." });
+
+        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        return await _userRepository.UpdateLanguageAsync(userId, language) ? NoContent() : NotFound();
+    }
+
+    private static string? NormalizeLanguage(string? lang)
+    {
+        var l = lang?.Trim().ToLowerInvariant();
+        return l is "pt" or "en" or "es" ? l : null;
     }
 }

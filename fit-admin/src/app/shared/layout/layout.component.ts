@@ -200,7 +200,17 @@ import { IconComponent } from '../components/icon/icon.component';
           </li>
           <li>
             <a routerLink="/diets" routerLinkActive="active-link">
-              <span class="nav-icon">🥗</span> Dietas
+              <span class="nav-icon"><ui-icon name="diet" /></span> Dietas
+            </a>
+          </li>
+          <li>
+            <a routerLink="/alunos" routerLinkActive="active-link">
+              <span class="nav-icon"><ui-icon name="users" /></span> Gestão de Alunos
+            </a>
+          </li>
+          <li>
+            <a routerLink="/user-workouts" routerLinkActive="active-link">
+              <span class="nav-icon"><ui-icon name="workout" /></span> Histórico de Treinos
             </a>
           </li>
         </ul>

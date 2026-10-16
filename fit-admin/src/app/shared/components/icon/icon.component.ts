@@ -7,6 +7,7 @@ export type IconName =
   | 'workout-plan'
   | 'workout'
   | 'users'
+  | 'diet'
   | 'sun'
   | 'moon'
   | 'logout';
@@ -55,6 +56,13 @@ export type IconName =
           <path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" />
           <circle cx="17.5" cy="9" r="2.6" />
           <path d="M16 14.3c2.6.4 4.5 2.6 4.5 5.4" />
+        }
+        @case ('diet') {
+          <path d="M3 11c0-5 3.5-8 9-8s9 3 9 8" />
+          <path d="M12 3v8" />
+          <path d="M3 11h18" />
+          <path d="M5 11c0 4 3 7 7 8" />
+          <path d="M19 11c0 4-3 7-7 8" />
         }
         @case ('sun') {
           <circle cx="12" cy="12" r="4" />

@@ -1,14 +1,17 @@
+import { environment } from '../../../environments/environment';
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { tap } from 'rxjs/operators';
 import { LoginRequest, LoginResponse, RegisterRequest } from '../models';
+import { I18nService } from '../i18n/i18n.service';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
-  private readonly baseUrl = 'https://localhost:7195';
+  private readonly i18n = inject(I18nService);
+  private readonly baseUrl = environment.apiUrl;
 
   readonly currentUser = signal<LoginResponse | null>(this.loadFromStorage());
 
@@ -33,13 +36,15 @@ export class AuthService {
     localStorage.setItem('fitmob_user', JSON.stringify(response));
     localStorage.setItem('fitmob_token', response.token);
     this.currentUser.set(response);
+    // Aplica o idioma salvo na conta (ou envia o do aparelho, se a conta ainda não tem)
+    this.i18n.syncAfterLogin(response.language);
   }
 
   logout() {
     localStorage.removeItem('fitmob_user');
     localStorage.removeItem('fitmob_token');
     this.currentUser.set(null);
-    this.router.navigate(['/login']);
+    window.location.href = '/login';
   }
 
   getToken(): string | null {

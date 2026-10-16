@@ -9,8 +9,10 @@ export class LoadingService {
   private navStartedAt = 0;
   private hideTimer?: ReturnType<typeof setTimeout>;
 
-  /** Overlay de troca de página */
-  readonly pageLoading = this.navigating.asReadonly();
+  /** Mensagem de uma ação longa (ex.: "Aplicando idioma..."); mostra o overlay enquanto existir */
+  readonly message = signal<string | null>(null);
+  /** Overlay: troca de página ou ação com mensagem */
+  readonly pageLoading = computed(() => this.navigating() || this.message() !== null);
   /** Barra de topo: navegação ou requisições HTTP em andamento */
   readonly busy = computed(() => this.navigating() || this.pendingRequests() > 0);
 
@@ -24,6 +26,14 @@ export class LoadingService {
     const remaining = MIN_VISIBLE_MS - (Date.now() - this.navStartedAt);
     clearTimeout(this.hideTimer);
     this.hideTimer = setTimeout(() => this.navigating.set(false), Math.max(remaining, 0));
+  }
+
+  showMessage(text: string) {
+    this.message.set(text);
+  }
+
+  hideMessage() {
+    this.message.set(null);
   }
 
   requestStarted() {

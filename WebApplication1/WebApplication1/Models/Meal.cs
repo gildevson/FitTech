@@ -5,4 +5,5 @@ public class Meal
     public string Name { get; set; } = string.Empty;
     public int MealOrder { get; set; }
     public string MealTime { get; set; } = string.Empty;
+    public Guid? CreatedBy { get; set; }
 }

@@ -1,10 +1,11 @@
+import { environment } from '../../../environments/environment';
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
-  readonly baseUrl = 'https://localhost:7195';
+  readonly baseUrl = environment.apiUrl;
   private readonly http = inject(HttpClient);
 
   get<T>(path: string, params?: Record<string, string | number>): Observable<T> {

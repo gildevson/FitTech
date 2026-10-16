@@ -1,0 +1,5 @@
+{
+  "buildCommand": "npx ng build",
+  "outputDirectory": "dist/fit-admin/browser",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+}

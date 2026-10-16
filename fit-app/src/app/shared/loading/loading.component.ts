@@ -49,10 +49,18 @@ import { LoadingService } from '../../core/services/loading.service';
       display: flex;
       align-items: center;
       justify-content: center;
-      background: rgba(11, 16, 32, 0.72);
+      background: var(--ft-scrim);
       backdrop-filter: blur(6px);
       -webkit-backdrop-filter: blur(6px);
       animation: fade-in 0.15s ease-out;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .overlay-msg {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--ft-text);
     }
 
     .loader {
@@ -92,6 +100,9 @@ import { LoadingService } from '../../core/services/loading.service';
           <div class="ring"></div>
           <ion-icon name="barbell"></ion-icon>
         </div>
+        @if (loading.message(); as msg) {
+          <div class="overlay-msg">{{ msg }}</div>
+        }
       </div>
     }
   `

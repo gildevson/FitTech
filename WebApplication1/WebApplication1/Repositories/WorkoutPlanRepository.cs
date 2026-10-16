@@ -9,18 +9,23 @@ public class WorkoutPlanRepository : IWorkoutPlanRepository
         _connectionFactory = connectionFactory;
     }
 
-    public async Task<IEnumerable<WorkoutPlan>> GetAllAsync()
+    public async Task<IEnumerable<WorkoutPlan>> GetAllAsync(bool systemOnly = false, Guid? userId = null)
     {
         using var conn = _connectionFactory.CreateConnection();
+        // systemOnly + userId: planos do sistema e os planos pessoais desse usuário
+        var where = systemOnly
+            ? (userId.HasValue ? "WHERE user_id IS NULL OR user_id = @UserId" : "WHERE user_id IS NULL")
+            : "";
         return await conn.QueryAsync<WorkoutPlan>(
-            "SELECT id, name, description, created_at AS CreatedAt FROM workout_plans ORDER BY name");
+            $"SELECT id, name, description, user_id AS UserId, created_at AS CreatedAt FROM workout_plans {where} ORDER BY name",
+            new { UserId = userId });
     }
 
     public async Task<WorkoutPlan?> GetByIdAsync(Guid id)
     {
         using var conn = _connectionFactory.CreateConnection();
         return await conn.QueryFirstOrDefaultAsync<WorkoutPlan>(
-            "SELECT id, name, description, created_at AS CreatedAt FROM workout_plans WHERE id = @Id",
+            "SELECT id, name, description, user_id AS UserId, created_at AS CreatedAt FROM workout_plans WHERE id = @Id",
             new { Id = id });
     }
 
@@ -28,7 +33,7 @@ public class WorkoutPlanRepository : IWorkoutPlanRepository
     {
         using var conn = _connectionFactory.CreateConnection();
         return await conn.ExecuteScalarAsync<Guid>(
-            "INSERT INTO workout_plans (name, description) VALUES (@Name, @Description) RETURNING id",
+            "INSERT INTO workout_plans (name, description, user_id) VALUES (@Name, @Description, @UserId) RETURNING id",
             plan);
     }
 

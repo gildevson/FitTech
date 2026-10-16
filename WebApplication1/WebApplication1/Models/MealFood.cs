@@ -11,4 +11,5 @@ public class MealFood
     public string? OpenFoodFactsId { get; set; }
     public string? ServingUnit { get; set; }
     public decimal? ServingGrams { get; set; }
+    public Guid? CreatedBy { get; set; }
 }

@@ -19,8 +19,8 @@ export interface BarChartPoint {
       display: flex;
       align-items: stretch;
       justify-content: center;
-      gap: 48px;
-      height: 220px;
+      gap: var(--bar-gap, 32px);
+      height: var(--bar-height, 160px);
       padding: 8px 12px 0;
     }
     .gridlines {

@@ -1,6 +1,7 @@
 using System.Text;
 using Dapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.IdentityModel.Tokens;
 using Npgsql;
 
@@ -21,6 +22,9 @@ builder.Services.AddScoped<IDietRepository, DietRepository>();
 builder.Services.AddScoped<IMealRepository, MealRepository>();
 builder.Services.AddScoped<IMealFoodRepository, MealFoodRepository>();
 builder.Services.AddScoped<IUserDietRepository, UserDietRepository>();
+builder.Services.AddScoped<IWorkoutLogRepository, WorkoutLogRepository>();
+builder.Services.AddScoped<IUserWorkoutAssignmentRepository, UserWorkoutAssignmentRepository>();
+builder.Services.AddScoped<IBodyMeasurementRepository, BodyMeasurementRepository>();
 builder.Services.AddSingleton<JwtService>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -41,46 +45,71 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
+// Origens liberadas: localhost (desenvolvimento) + as do ambiente publicado,
+// separadas por vírgula na variável Cors__Origins (ex.: "https://fitmob.vercel.app,https://fitmob-admin.vercel.app")
+var corsOrigins = new[] { "http://localhost:4200", "https://localhost:4200", "http://localhost:4300", "https://localhost:4300", "http://localhost:5017" }
+    .Concat((builder.Configuration["Cors:Origins"] ?? "")
+        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        .Select(o => o.TrimEnd('/')))
+    .ToArray();
+
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins("http://localhost:4200", "https://localhost:4200", "http://localhost:4300", "https://localhost:4300")
+        policy.WithOrigins(corsOrigins)
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
 });
 
+// Hospedagem (Render, Railway...): o HTTPS termina no proxy; estes cabeçalhos dizem à API que a chamada veio por HTTPS
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 var app = builder.Build();
 
 // DB init + seed admin
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+var connectionString = DbConnectionFactory.Resolve(builder.Configuration);
 try
 {
     await using var conn = new NpgsqlConnection(connectionString);
     await conn.OpenAsync();
     await conn.ExecuteAsync(SqlScripts.CreateTables);
 
-    // Seed default admin
+    // Admin padrão. Em desenvolvimento a senha é sempre "admin123" (resetada a cada início).
+    // Publicado: a senha vem de Admin__Password e NUNCA é resetada; sem a variável, nenhum admin é criado.
     var adminExists = await conn.ExecuteScalarAsync<bool>(
         "SELECT EXISTS(SELECT 1 FROM users WHERE email = 'admin@fittech.com')");
-    var resetHash = BCrypt.Net.BCrypt.HashPassword("admin123");
-    if (!adminExists)
+    var isDev = app.Environment.IsDevelopment();
+    var adminPassword = builder.Configuration["Admin:Password"] ?? (isDev ? "admin123" : null);
+
+    if (!adminExists && adminPassword is not null)
     {
         await conn.ExecuteAsync(
             "INSERT INTO users (name, email, password_hash, role, is_active) VALUES ('Admin', 'admin@fittech.com', @Hash, 'admin', true)",
-            new { Hash = resetHash });
+            new { Hash = BCrypt.Net.BCrypt.HashPassword(adminPassword) });
         Console.ForegroundColor = ConsoleColor.Yellow;
-        Console.WriteLine("Admin criado: admin@fittech.com / admin123");
+        Console.WriteLine(isDev ? "Admin criado: admin@fittech.com / admin123" : "Admin criado: admin@fittech.com (senha de Admin__Password)");
         Console.ResetColor();
     }
-    else
+    else if (adminExists && isDev)
     {
         await conn.ExecuteAsync(
             "UPDATE users SET password_hash = @Hash, is_active = true WHERE email = 'admin@fittech.com'",
-            new { Hash = resetHash });
+            new { Hash = BCrypt.Net.BCrypt.HashPassword(adminPassword!) });
         Console.ForegroundColor = ConsoleColor.Yellow;
         Console.WriteLine("Senha do admin resetada para: admin123");
+        Console.ResetColor();
+    }
+    else if (!adminExists)
+    {
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.WriteLine("Nenhum admin criado: defina a variável Admin__Password para criar admin@fittech.com.");
         Console.ResetColor();
     }
 
@@ -100,8 +129,10 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+app.UseForwardedHeaders();
 app.UseCors();
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+    app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

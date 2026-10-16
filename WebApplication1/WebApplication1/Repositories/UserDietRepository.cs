@@ -17,6 +17,14 @@ public class UserDietRepository : IUserDietRepository
             new { UserId = userId, DietId = dietId });
     }
 
+    public async Task UnassignAsync(Guid userId, Guid dietId)
+    {
+        using var conn = _connectionFactory.CreateConnection();
+        await conn.ExecuteAsync(
+            "DELETE FROM user_diets WHERE user_id = @UserId AND diet_id = @DietId",
+            new { UserId = userId, DietId = dietId });
+    }
+
     public async Task<IEnumerable<Guid>> GetByUserIdAsync(Guid userId)
     {
         using var conn = _connectionFactory.CreateConnection();

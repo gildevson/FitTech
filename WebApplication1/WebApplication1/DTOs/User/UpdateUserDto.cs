@@ -1,4 +1,4 @@
-public class UpdateUserDto
+public class UpdateUserDto : UserAddressDto
 {
     public string Name { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;

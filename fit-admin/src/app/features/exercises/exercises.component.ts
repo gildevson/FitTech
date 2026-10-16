@@ -76,9 +76,9 @@ import { DrawerComponent } from '../../shared/components/drawer/drawer.component
       <div class="ui-filter-field">
         <label>Grupo Muscular</label>
         <select [(ngModel)]="muscleGroupDraft">
-          <option [ngValue]="''">Todos</option>
+          <option [ngValue]="''">Todos ({{ items().length }})</option>
           @for (mg of muscleGroups(); track mg.id) {
-            <option [ngValue]="mg.id">{{ mg.name }}</option>
+            <option [ngValue]="mg.id">{{ mg.name }} ({{ groupCounts()[mg.id] || 0 }})</option>
           }
         </select>
       </div>
@@ -204,6 +204,15 @@ export class ExercisesComponent implements OnInit {
   muscleGroupDraft = '';
   nameFilter = signal('');
   muscleGroupFilter = signal('');
+
+  /** Quantos exercícios cadastrados há em cada grupo muscular (mostrado no filtro) */
+  groupCounts = computed(() => {
+    const counts: Record<string, number> = {};
+    for (const e of this.items()) {
+      if (e.muscleGroupId) counts[e.muscleGroupId] = (counts[e.muscleGroupId] ?? 0) + 1;
+    }
+    return counts;
+  });
 
   filteredItems = computed(() => {
     const name = this.nameFilter().trim().toLowerCase();

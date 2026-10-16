@@ -1,25 +1,25 @@
 import { Component } from '@angular/core';
+import { TPipe } from "../../core/i18n/t.pipe";
 import {
   IonTabs,
   IonTabBar,
   IonTabButton,
   IonIcon,
-  IonLabel,
-  IonRouterOutlet
+  IonLabel
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { barbell, flame, person, nutrition } from 'ionicons/icons';
+import { barbell, flame, nutrition, body } from 'ionicons/icons';
 
 @Component({
   selector: 'app-tabs',
   standalone: true,
   imports: [
+    TPipe,
     IonTabs,
     IonTabBar,
     IonTabButton,
     IonIcon,
-    IonLabel,
-    IonRouterOutlet
+    IonLabel
   ],
   styles: [`
     ion-tab-button {
@@ -54,23 +54,22 @@ import { barbell, flame, person, nutrition } from 'ionicons/icons';
   `],
   template: `
     <ion-tabs>
-      <ion-router-outlet></ion-router-outlet>
       <ion-tab-bar slot="bottom">
         <ion-tab-button tab="treinos" href="/tabs/treinos">
           <ion-icon name="flame"></ion-icon>
-          <ion-label>Treinos</ion-label>
+          <ion-label>{{ 'tabs.workouts' | t }}</ion-label>
         </ion-tab-button>
         <ion-tab-button tab="exercicios" href="/tabs/exercicios">
           <ion-icon name="barbell"></ion-icon>
-          <ion-label>Exercícios</ion-label>
+          <ion-label>{{ 'tabs.exercises' | t }}</ion-label>
         </ion-tab-button>
         <ion-tab-button tab="dieta" href="/tabs/dieta">
           <ion-icon name="nutrition"></ion-icon>
-          <ion-label>Dieta</ion-label>
+          <ion-label>{{ 'tabs.diet' | t }}</ion-label>
         </ion-tab-button>
-        <ion-tab-button tab="perfil" href="/tabs/perfil">
-          <ion-icon name="person"></ion-icon>
-          <ion-label>Perfil</ion-label>
+        <ion-tab-button tab="medidas" href="/tabs/medidas">
+          <ion-icon name="body"></ion-icon>
+          <ion-label>{{ 'tabs.measures' | t }}</ion-label>
         </ion-tab-button>
       </ion-tab-bar>
     </ion-tabs>
@@ -78,6 +77,6 @@ import { barbell, flame, person, nutrition } from 'ionicons/icons';
 })
 export class TabsPage {
   constructor() {
-    addIcons({ barbell, flame, person, nutrition });
+    addIcons({ barbell, flame, nutrition, body });
   }
 }

@@ -19,6 +19,7 @@ export interface WorkoutPlan {
   id: string;
   name: string;
   description?: string;
+  userId?: string;
   createdAt: string;
 }
 
@@ -38,6 +39,7 @@ export interface WorkoutExercise {
   exerciseId: string;
   exerciseName?: string;
   muscleGroupName?: string;
+  imageUrl?: string;
   sets: number;
   reps: string;
   restSeconds: number;
@@ -57,7 +59,17 @@ export interface LoginResponse {
   role: string;
 }
 
-export interface AppUser {
+export interface UserAddress {
+  zipCode?: string | null;
+  street?: string | null;
+  addressNumber?: string | null;
+  complement?: string | null;
+  neighborhood?: string | null;
+  city?: string | null;
+  state?: string | null;
+}
+
+export interface AppUser extends UserAddress {
   id: string;
   name: string;
   email: string;
@@ -70,6 +82,8 @@ export interface Diet {
   id: string;
   name: string;
   description?: string;
+  createdBy?: string;
+  createdByName?: string;
   createdAt: string;
   meals: Meal[];
 }
@@ -94,6 +108,62 @@ export interface MealFood {
   fat: number;
   servingUnit?: string;
   servingGrams?: number;
+}
+
+export interface RecentWorkoutLog {
+  id: string;
+  userName: string;
+  workoutName: string;
+  planName: string;
+  loggedDate: string;
+  createdAt: string;
+}
+
+export interface PopularPlan {
+  planName: string;
+  logCount: number;
+  userCount: number;
+}
+
+export interface UserWorkoutStats {
+  id: string;
+  name: string;
+  email: string;
+  totalLogs: number;
+  logsThisWeek: number;
+  logsThisMonth: number;
+  lastWorkoutDate: string | null;
+}
+
+export interface UserWorkoutLog {
+  id: string;
+  loggedDate: string;
+  workoutName: string;
+  planName: string;
+  status?: 'done' | 'skipped';
+  skipReason?: string | null;
+}
+
+export interface WorkoutStats {
+  recentActivity: RecentWorkoutLog[];
+  popularPlans: PopularPlan[];
+}
+
+export interface WorkoutAssignee {
+  assignmentId: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  assignedAt: string;
+}
+
+export interface AssignedWorkout {
+  id: string;
+  workoutId: string;
+  workoutName: string;
+  planName: string;
+  dayOfWeek: number;
+  assignedAt: string;
 }
 
 export interface FoodSearchResult {

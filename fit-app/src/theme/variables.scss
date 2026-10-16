@@ -1,11 +1,12 @@
 // FitMob — Ionic CSS Variables
-// Tema escuro com accent #e94560
+// Tema escuro (padrão, accent #e94560) e tema claro (.theme-light, laranja e branco)
 
 :root {
   // ===== Design tokens FitMob =====
   --ft-bg: #0b1020;
   --ft-bg-elevated: #10172b;
   --ft-surface: #151d35;
+  --ft-surface-rgb: 21, 29, 53;
   --ft-surface-2: #1b2542;
   --ft-border: rgba(255, 255, 255, 0.07);
   --ft-border-strong: rgba(255, 255, 255, 0.14);
@@ -22,6 +23,14 @@
   --ft-radius-lg: 18px;
   --ft-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.25);
   --ft-gradient: linear-gradient(135deg, #f05a74 0%, #d1334e 100%);
+  --ft-accent-rgb: 233, 69, 96;
+  --ft-info: #9db4ff;
+  --ft-danger: #ff5c6c;
+  --ft-header-bg: rgba(11, 16, 32, 0.85);
+  --ft-tabbar-bg: rgba(16, 23, 43, 0.92);
+  --ft-skeleton: rgba(255, 255, 255, 0.07);
+  --ft-scrim: rgba(11, 16, 32, 0.72);
+  --ft-error-text: #ff8da1;
 
   // Cor primária — vermelho FitMob
   --ion-color-primary: #e94560;
@@ -129,4 +138,83 @@ body {
   --ion-card-background: #151d35;
 
   --ion-overlay-background-color: #151d35;
+}
+
+// ===== Tema claro: branco com laranja =====
+// Mesmos tokens do tema escuro, só que com valores claros. Ativado por ThemeService (classe no <html>).
+html.theme-light,
+html.theme-light body {
+  color-scheme: light;
+
+  --ft-bg: #f6f7fb;
+  --ft-bg-elevated: #eef0f5;
+  --ft-surface: #ffffff;
+  --ft-surface-rgb: 255, 255, 255;
+  --ft-surface-2: #ffffff;
+  --ft-border: rgba(20, 24, 40, 0.08);
+  --ft-border-strong: rgba(20, 24, 40, 0.16);
+  --ft-text: #1b1f2e;
+  --ft-text-muted: #5b6275;
+  --ft-text-faint: #8a90a2;
+  --ft-accent: #f26b1d;
+  --ft-accent-strong: #d9560b;
+  --ft-accent-soft: rgba(242, 107, 29, 0.12);
+  --ft-accent-ring: rgba(242, 107, 29, 0.35);
+  --ft-accent-rgb: 242, 107, 29;
+  --ft-success: #16a34a;
+  --ft-info: #2563eb;
+  --ft-danger: #dc2626;
+  --ft-shadow: 0 1px 2px rgba(20, 24, 40, 0.06), 0 6px 20px rgba(20, 24, 40, 0.07);
+  --ft-gradient: linear-gradient(135deg, #ff9445 0%, #e8590c 100%);
+  --ft-header-bg: rgba(255, 255, 255, 0.88);
+  --ft-tabbar-bg: rgba(255, 255, 255, 0.94);
+  --ft-skeleton: rgba(20, 24, 40, 0.08);
+  --ft-scrim: rgba(246, 247, 251, 0.75);
+  --ft-error-text: #c2410c;
+
+  --ion-color-primary: #f26b1d;
+  --ion-color-primary-rgb: 242, 107, 29;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #d55e1a;
+  --ion-color-primary-tint: #f37a34;
+
+  --ion-color-danger: #dc2626;
+  --ion-color-danger-rgb: 220, 38, 38;
+  --ion-color-danger-shade: #c22121;
+  --ion-color-danger-tint: #e03c3c;
+
+  --ion-color-medium: #6b7286;
+  --ion-color-medium-rgb: 107, 114, 134;
+
+  --ion-background-color: #f6f7fb;
+  --ion-background-color-rgb: 246, 247, 251;
+  --ion-text-color: #1b1f2e;
+  --ion-text-color-rgb: 27, 31, 46;
+
+  --ion-color-step-50: #eceef3;
+  --ion-color-step-100: #e1e4eb;
+  --ion-color-step-150: #d5d9e2;
+  --ion-color-step-200: #c9ced9;
+  --ion-color-step-250: #bdc3d0;
+  --ion-color-step-300: #b1b8c7;
+  --ion-color-step-350: #a5adbe;
+  --ion-color-step-400: #99a1b4;
+  --ion-color-step-450: #8d96ab;
+  --ion-color-step-500: #818ba2;
+  --ion-color-step-550: #747e94;
+  --ion-color-step-600: #687185;
+  --ion-color-step-650: #5c6477;
+  --ion-color-step-700: #505768;
+  --ion-color-step-750: #444a5a;
+  --ion-color-step-800: #383d4b;
+  --ion-color-step-850: #2c303d;
+  --ion-color-step-900: #20232e;
+  --ion-color-step-950: #1b1f2e;
+
+  --ion-item-background: #ffffff;
+  --ion-toolbar-background: #ffffff;
+  --ion-tab-bar-background: #ffffff;
+  --ion-card-background: #ffffff;
+  --ion-overlay-background-color: #ffffff;
 }

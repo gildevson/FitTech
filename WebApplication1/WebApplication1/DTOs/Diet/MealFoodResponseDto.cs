@@ -10,4 +10,5 @@ public class MealFoodResponseDto
     public decimal Fat { get; set; }
     public string? ServingUnit { get; set; }
     public decimal? ServingGrams { get; set; }
+    public Guid? CreatedBy { get; set; }
 }

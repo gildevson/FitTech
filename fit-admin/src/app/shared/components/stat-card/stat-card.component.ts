@@ -14,7 +14,7 @@ import { IconComponent, IconName } from '../icon/icon.component';
       border: 1px solid var(--color-border);
       border-radius: var(--radius-md);
       box-shadow: var(--shadow-sm);
-      padding: 22px 24px 24px;
+      padding: 14px 18px 16px;
       overflow: hidden;
       transition: transform 0.15s, box-shadow 0.15s;
     }
@@ -33,7 +33,7 @@ import { IconComponent, IconName } from '../icon/icon.component';
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
-      margin-bottom: 18px;
+      margin-bottom: 10px;
     }
     .label {
       font-size: 0.74rem;
@@ -44,8 +44,8 @@ import { IconComponent, IconName } from '../icon/icon.component';
     }
     .icon {
       --ui-icon-size: 17px;
-      width: 34px;
-      height: 34px;
+      width: 28px;
+      height: 28px;
       border-radius: var(--radius-sm);
       background: color-mix(in srgb, var(--stat-accent, var(--color-primary)) 14%, transparent);
       color: var(--stat-accent, var(--color-primary));
@@ -56,11 +56,11 @@ import { IconComponent, IconName } from '../icon/icon.component';
       flex-shrink: 0;
     }
     .value {
-      font-size: 2.1rem;
+      font-size: 1.65rem;
       font-weight: 700;
       color: var(--color-text);
       line-height: 1;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       font-variant-numeric: tabular-nums;
     }
     .trend {

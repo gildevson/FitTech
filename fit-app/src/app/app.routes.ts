@@ -29,6 +29,10 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/perfil/perfil.page').then(m => m.PerfilPage)
       },
       {
+        path: 'medidas',
+        loadComponent: () => import('./pages/medidas/medidas.page').then(m => m.MedidasPage)
+      },
+      {
         path: 'dieta',
         loadComponent: () => import('./pages/dieta/dieta.page').then(m => m.DietaPage)
       },

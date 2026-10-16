@@ -21,8 +21,8 @@ public class MealFoodRepository : IMealFoodRepository
     {
         using var conn = _connectionFactory.CreateConnection();
         return await conn.ExecuteScalarAsync<Guid>(
-            "INSERT INTO meal_foods (meal_id, food_name, quantity_grams, calories, protein, carbs, fat, open_food_facts_id, serving_unit, serving_grams) VALUES (@MealId, @FoodName, @QuantityGrams, @Calories, @Protein, @Carbs, @Fat, @OpenFoodFactsId, @ServingUnit, @ServingGrams) RETURNING id",
-            new { food.MealId, food.FoodName, food.QuantityGrams, food.Calories, food.Protein, food.Carbs, food.Fat, food.OpenFoodFactsId, food.ServingUnit, food.ServingGrams });
+            "INSERT INTO meal_foods (meal_id, food_name, quantity_grams, calories, protein, carbs, fat, open_food_facts_id, serving_unit, serving_grams, created_by) VALUES (@MealId, @FoodName, @QuantityGrams, @Calories, @Protein, @Carbs, @Fat, @OpenFoodFactsId, @ServingUnit, @ServingGrams, @CreatedBy) RETURNING id",
+            new { food.MealId, food.FoodName, food.QuantityGrams, food.Calories, food.Protein, food.Carbs, food.Fat, food.OpenFoodFactsId, food.ServingUnit, food.ServingGrams, food.CreatedBy });
     }
 
     public async Task<bool> UpdateAsync(MealFood food)

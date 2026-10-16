@@ -6,11 +6,12 @@ import { Diet, Meal, MealFood, FoodSearchResult } from '../../core/models';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { DrawerComponent } from '../../shared/components/drawer/drawer.component';
+import { IconComponent } from '../../shared/components/icon/icon.component';
 
 @Component({
   selector: 'app-diets',
   standalone: true,
-  imports: [CommonModule, FormsModule, PageHeaderComponent, ButtonComponent, DrawerComponent],
+  imports: [CommonModule, FormsModule, PageHeaderComponent, ButtonComponent, DrawerComponent, IconComponent],
   styles: [`
     .loading { color: var(--color-text-muted); padding: 32px; text-align: center; }
     .empty-state { text-align: center; padding: 40px; color: var(--color-text-muted); }
@@ -39,13 +40,13 @@ import { DrawerComponent } from '../../shared/components/drawer/drawer.component
 
     .diet-header-left { display: flex; align-items: center; gap: 14px; }
     .diet-icon {
-      font-size: 1.3rem;
-      width: 42px; height: 42px;
+      width: 36px; height: 36px;
       display: flex; align-items: center; justify-content: center;
-      border-radius: 50%;
-      background: linear-gradient(135deg, var(--color-primary-soft, rgba(110,139,255,0.16)), var(--color-surface));
-      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      background: var(--color-primary-soft, rgba(110,139,255,0.14));
+      color: var(--color-primary);
       flex-shrink: 0;
+      --ui-icon-size: 18px;
     }
     .diet-name { font-size: 1.02rem; font-weight: 700; color: var(--color-text); letter-spacing: -0.01em; }
     .diet-description { font-size: 0.82rem; color: var(--color-text-muted); margin-top: 2px; }
@@ -62,6 +63,20 @@ import { DrawerComponent } from '../../shared/components/drawer/drawer.component
       white-space: nowrap;
     }
     .diet-stats span { font-size: 0.92rem; font-weight: 700; }
+
+    .creator-badge {
+      font-size: 0.74rem;
+      font-weight: 600;
+      color: var(--color-primary);
+      background: var(--color-primary-soft, rgba(110,139,255,0.12));
+      border: 1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);
+      border-radius: 20px;
+      padding: 3px 10px;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
 
     .chevron {
       width: 20px; height: 20px;
@@ -111,6 +126,7 @@ import { DrawerComponent } from '../../shared/components/drawer/drawer.component
       gap: 12px;
     }
     .meal-name { display: flex; align-items: center; gap: 8px; font-size: 0.92rem; font-weight: 700; color: var(--color-text); flex-wrap: wrap; }
+    .meal-icon { width: 18px; height: 18px; color: var(--color-primary); flex-shrink: 0; }
     .meal-time-badge { font-size: 0.72rem; font-weight: 600; color: var(--color-primary); background: var(--color-primary-soft, rgba(110,139,255,0.12)); border: 1px solid color-mix(in srgb, var(--color-primary) 30%, transparent); padding: 2px 8px; border-radius: 10px; }
     .meal-macros { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
     .meal-macros span {
@@ -133,15 +149,40 @@ import { DrawerComponent } from '../../shared/components/drawer/drawer.component
       justify-content: space-between;
       padding: 10px 16px;
       border-bottom: 1px solid var(--color-border);
-      font-size: 0.85rem;
       transition: background 0.12s;
+      gap: 12px;
     }
     .food-item:hover { background: var(--color-surface-hover); }
     .food-item:last-child { border-bottom: none; }
-    .food-name { color: var(--color-text); font-weight: 500; }
-    .food-qty { color: var(--color-text-muted); font-size: 0.78rem; margin-top: 1px; }
-    .food-cals { color: var(--color-warning, #f59e0b); font-size: 0.78rem; font-weight: 700; }
-    .food-right { display: flex; align-items: center; gap: 10px; }
+    .food-info { flex: 1; min-width: 0; }
+    .food-name { color: var(--color-text); font-weight: 600; font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .food-detail { display: flex; align-items: center; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
+    .food-qty { color: var(--color-text-muted); font-size: 0.75rem; }
+    .food-qty::after { content: '·'; margin-left: 8px; color: var(--color-border); }
+    .food-macro { font-size: 0.72rem; font-weight: 600; padding: 1px 6px; border-radius: 8px; }
+    .food-macro-p { color: #2563eb; background: rgba(96,165,250,0.14); }
+    .food-macro-c { color: #0d9488; background: rgba(52,211,153,0.14); }
+    .food-macro-g { color: #dc2626; background: rgba(248,113,113,0.14); }
+    .food-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .food-cals {
+      font-size: 0.8rem; font-weight: 700;
+      color: var(--color-warning, #f59e0b);
+      background: color-mix(in srgb, var(--color-warning, #f59e0b) 12%, transparent);
+      border: 1px solid color-mix(in srgb, var(--color-warning, #f59e0b) 30%, transparent);
+      border-radius: 20px; padding: 3px 10px; white-space: nowrap;
+    }
+    .btn-food-action {
+      display: flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px;
+      background: transparent; border: 1px solid transparent;
+      border-radius: var(--radius-sm); cursor: pointer;
+      color: var(--color-text-muted);
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .btn-food-action:hover { background: var(--color-surface-hover); border-color: var(--color-border); }
+    .btn-food-action.edit:hover { color: var(--color-primary); border-color: var(--color-primary); }
+    .btn-food-action.del:hover { color: var(--color-danger); border-color: var(--color-danger); }
+    .btn-food-action svg { width: 14px; height: 14px; }
 
     .totals-bar {
       margin-top: 14px;
@@ -180,28 +221,48 @@ import { DrawerComponent } from '../../shared/components/drawer/drawer.component
     }
     .modal h3 { color: var(--color-text); margin: 0 0 20px; font-size: 1.15rem; }
     .field { margin-bottom: 16px; }
-    label { display: block; color: var(--color-text-muted); font-size: 0.85rem; font-weight: 500; margin-bottom: 6px; }
-    input[type=text], input[type=number], textarea, select {
+    label { display: block; color: var(--color-text-muted); font-size: 0.82rem; font-weight: 600; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.04em; }
+    input[type=text], input[type=number], input[type=time], textarea, select {
       width: 100%; padding: 10px 14px;
       background: var(--color-card-bg); border: 1px solid var(--color-border);
       border-radius: var(--radius-sm); color: var(--color-text);
       font-size: 0.9rem; font-family: var(--font-family); box-sizing: border-box;
+      transition: border-color 0.15s;
+      -webkit-appearance: none; appearance: none;
     }
-    input[type=text]:focus, input[type=number]:focus, textarea:focus {
+    input[type=text]:focus, input[type=number]:focus, input[type=time]:focus, textarea:focus, select:focus {
       outline: none; border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 15%, transparent);
     }
+    input[type=time]::-webkit-calendar-picker-indicator { opacity: 0.5; cursor: pointer; }
     textarea { resize: vertical; min-height: 80px; }
-    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--color-border); }
     .error-msg {
       background: var(--color-danger-soft); border: 1px solid var(--color-danger);
-      color: var(--color-danger); padding: 10px; border-radius: var(--radius-sm);
+      color: var(--color-danger); padding: 10px 14px; border-radius: var(--radius-sm);
       font-size: 0.85rem; margin-bottom: 12px;
     }
 
+    /* Measure toggle */
+    .measure-toggle { display: flex; gap: 0; border: 1px solid var(--color-border); border-radius: var(--radius-sm); overflow: hidden; }
+    .measure-btn {
+      flex: 1; padding: 9px 16px; cursor: pointer; font-size: 0.85rem; font-weight: 600;
+      background: var(--color-card-bg); color: var(--color-text-muted);
+      border: none; transition: background 0.15s, color 0.15s;
+    }
+    .measure-btn:not(:last-child) { border-right: 1px solid var(--color-border); }
+    .measure-btn.active { background: var(--color-primary); color: #fff; }
+    .serving-preview {
+      font-size: 0.82rem; color: var(--color-text-muted); margin-bottom: 12px;
+      padding: 10px 14px; background: var(--color-surface);
+      border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+    }
+    .serving-preview strong { color: var(--color-text); }
+
     /* Food search */
-    .search-row { display: flex; gap: 8px; margin-bottom: 12px; }
+    .search-row { display: flex; gap: 8px; margin-bottom: 10px; }
     .search-row input { flex: 1; }
-    .search-results { max-height: 240px; overflow-y: auto; border: 1px solid var(--color-border); border-radius: var(--radius-sm); }
+    .search-results { max-height: 220px; overflow-y: auto; border: 1px solid var(--color-border); border-radius: var(--radius-sm); margin-bottom: 16px; }
     .search-result-item {
       padding: 10px 14px; cursor: pointer;
       border-bottom: 1px solid var(--color-border);
@@ -214,6 +275,9 @@ import { DrawerComponent } from '../../shared/components/drawer/drawer.component
     .search-result-macros { font-size: 0.75rem; color: var(--color-text-muted); margin-top: 2px; }
     .searching-msg { padding: 20px; text-align: center; color: var(--color-text-muted); font-size: 0.85rem; }
     .no-results { padding: 20px; text-align: center; color: var(--color-text-muted); font-size: 0.85rem; }
+    .macros-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .divider { border: none; border-top: 1px solid var(--color-border); margin: 16px 0; }
   `],
   template: `
     <ui-page-header title="Dietas">
@@ -232,7 +296,7 @@ import { DrawerComponent } from '../../shared/components/drawer/drawer.component
           <div class="diet-card">
             <div class="diet-header" (click)="toggleDiet(diet.id)">
               <div class="diet-header-left">
-                <span class="diet-icon">🥗</span>
+                <span class="diet-icon"><ui-icon name="diet" /></span>
                 <div>
                   <div class="diet-name">{{ diet.name }}</div>
                   @if (diet.description) {
@@ -241,6 +305,11 @@ import { DrawerComponent } from '../../shared/components/drawer/drawer.component
                 </div>
               </div>
               <div class="diet-header-right">
+                @if (diet.createdByName) {
+                  <div class="creator-badge" title="Criado por {{ diet.createdByName }}">
+                    👤 {{ diet.createdByName }}
+                  </div>
+                }
                 <div class="diet-stats">
                   <span>{{ getDietTotals(diet).calories | number:'1.0-0' }}</span> kcal/dia
                 </div>
@@ -267,9 +336,9 @@ import { DrawerComponent } from '../../shared/components/drawer/drawer.component
                     <div class="meal-header">
                       <div>
                         <div class="meal-name">
-                          🍽️ {{ meal.name }}
+                          {{ meal.name }}
                           @if (meal.mealTime) {
-                            <span class="meal-time-badge">🕐 {{ meal.mealTime }}</span>
+                            <span class="meal-time-badge">⏰ {{ meal.mealTime }}</span>
                           }
                         </div>
                         <div class="meal-macros">
@@ -290,14 +359,31 @@ import { DrawerComponent } from '../../shared/components/drawer/drawer.component
                       <div class="foods-list">
                         @for (food of meal.foods; track food.id) {
                           <div class="food-item">
-                            <div>
+                            <div class="food-info">
                               <div class="food-name">{{ food.foodName }}</div>
-                              <div class="food-qty">{{ getFoodQtyDisplay(food) }}</div>
+                              <div class="food-detail">
+                                <span class="food-qty">{{ getFoodQtyDisplay(food) }}</span>
+                                <span class="food-macro food-macro-p">P {{ food.protein | number:'1.0-1' }}g</span>
+                                <span class="food-macro food-macro-c">C {{ food.carbs | number:'1.0-1' }}g</span>
+                                <span class="food-macro food-macro-g">G {{ food.fat | number:'1.0-1' }}g</span>
+                              </div>
                             </div>
                             <div class="food-right">
                               <span class="food-cals">{{ food.calories | number:'1.0-0' }} kcal</span>
-                              <button class="btn-icon" (click)="openEditFood(food, meal)" title="Editar alimento" style="color: var(--color-primary);">✎</button>
-                              <button class="btn-icon" (click)="deleteFood(meal, food)" title="Remover alimento">✕</button>
+                              <button class="btn-food-action edit" (click)="openEditFood(food, meal)" title="Editar">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                </svg>
+                              </button>
+                              <button class="btn-food-action del" (click)="deleteFood(meal, food)" title="Remover">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                  <polyline points="3 6 5 6 21 6"/>
+                                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                                  <path d="M10 11v6M14 11v6"/>
+                                  <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                                </svg>
+                              </button>
                             </div>
                           </div>
                         }
@@ -366,13 +452,15 @@ import { DrawerComponent } from '../../shared/components/drawer/drawer.component
             <label>Nome da Refeição</label>
             <input type="text" [(ngModel)]="mealForm.name" name="name" required placeholder="Ex: Café da Manhã" />
           </div>
-          <div class="field">
-            <label>Horário</label>
-            <input type="time" [(ngModel)]="mealForm.mealTime" name="mealTime" required />
-          </div>
-          <div class="field">
-            <label>Ordem</label>
-            <input type="number" [(ngModel)]="mealForm.mealOrder" name="mealOrder" min="0" />
+          <div class="form-grid-2">
+            <div class="field">
+              <label>Horário</label>
+              <input type="time" [(ngModel)]="mealForm.mealTime" name="mealTime" required />
+            </div>
+            <div class="field">
+              <label>Ordem</label>
+              <input type="number" [(ngModel)]="mealForm.mealOrder" name="mealOrder" min="0" />
+            </div>
           </div>
           @if (errorMsg()) {
             <div class="error-msg">{{ errorMsg() }}</div>
@@ -394,13 +482,15 @@ import { DrawerComponent } from '../../shared/components/drawer/drawer.component
             <label>Nome da Refeição</label>
             <input type="text" [(ngModel)]="mealForm.name" name="name" required placeholder="Ex: Café da Manhã" />
           </div>
-          <div class="field">
-            <label>Horário</label>
-            <input type="time" [(ngModel)]="mealForm.mealTime" name="mealTime" required />
-          </div>
-          <div class="field">
-            <label>Ordem</label>
-            <input type="number" [(ngModel)]="mealForm.mealOrder" name="mealOrder" min="0" />
+          <div class="form-grid-2">
+            <div class="field">
+              <label>Horário</label>
+              <input type="time" [(ngModel)]="mealForm.mealTime" name="mealTime" required />
+            </div>
+            <div class="field">
+              <label>Ordem</label>
+              <input type="number" [(ngModel)]="mealForm.mealOrder" name="mealOrder" min="0" />
+            </div>
           </div>
           @if (errorMsg()) {
             <div class="error-msg">{{ errorMsg() }}</div>
@@ -419,9 +509,9 @@ import { DrawerComponent } from '../../shared/components/drawer/drawer.component
         <h2 class="drawer-title">Adicionar Alimento</h2>
 
         <div class="field">
-          <label>Buscar na Open Food Facts</label>
+          <label>Buscar alimento <span style="font-weight:400; text-transform:none; letter-spacing:0; color: var(--color-text-faint); font-size:0.78rem;">(opcional — você também pode preencher manualmente abaixo)</span></label>
           <div class="search-row">
-            <input type="text" [(ngModel)]="foodSearchQuery" name="foodSearch" placeholder="Ex: arroz, frango, banana..." (keydown.enter)="searchFood()" />
+            <input type="text" [(ngModel)]="foodSearchQuery" name="foodSearch" placeholder="Ex: creatina, whey, arroz, frango..." (keydown.enter)="searchFood()" />
             <ui-button type="button" (click)="searchFood()">Buscar</ui-button>
           </div>
         </div>
@@ -450,9 +540,9 @@ import { DrawerComponent } from '../../shared/components/drawer/drawer.component
           </div>
           <div class="field">
             <label>Tipo de medida</label>
-            <div style="display:flex; gap:8px;">
-              <button type="button" [style.background]="foodForm.measureType==='grams' ? 'var(--color-primary)' : 'var(--color-surface)'" [style.color]="foodForm.measureType==='grams' ? '#fff' : 'var(--color-text)'" style="border:1px solid var(--color-border); border-radius:var(--radius-sm); padding:6px 16px; cursor:pointer; font-size:0.85rem;" (click)="foodForm.measureType='grams'; onMeasureTypeChange()">Gramas</button>
-              <button type="button" [style.background]="foodForm.measureType==='unit' ? 'var(--color-primary)' : 'var(--color-surface)'" [style.color]="foodForm.measureType==='unit' ? '#fff' : 'var(--color-text)'" style="border:1px solid var(--color-border); border-radius:var(--radius-sm); padding:6px 16px; cursor:pointer; font-size:0.85rem;" (click)="foodForm.measureType='unit'; onMeasureTypeChange()">Unidades</button>
+            <div class="measure-toggle">
+              <button type="button" class="measure-btn" [class.active]="foodForm.measureType==='grams'" (click)="foodForm.measureType='grams'; onMeasureTypeChange()">Gramas</button>
+              <button type="button" class="measure-btn" [class.active]="foodForm.measureType==='unit'" (click)="foodForm.measureType='unit'; onMeasureTypeChange()">Unidades</button>
             </div>
           </div>
           @if (foodForm.measureType === 'grams') {
@@ -461,7 +551,7 @@ import { DrawerComponent } from '../../shared/components/drawer/drawer.component
               <input type="number" [(ngModel)]="foodForm.quantityGrams" name="quantityGrams" min="0" required (input)="recalcMacros()" />
             </div>
           } @else {
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div class="form-grid-2">
               <div class="field">
                 <label>Quantidade</label>
                 <input type="number" [(ngModel)]="foodForm.servingQuantity" name="servingQuantity" min="0.1" step="0.5" (input)="onServingChange()" />
@@ -475,11 +565,12 @@ import { DrawerComponent } from '../../shared/components/drawer/drawer.component
               <label>Gramas por unidade</label>
               <input type="number" [(ngModel)]="foodForm.servingGrams" name="servingGrams" min="1" (input)="onServingChange()" />
             </div>
-            <div style="font-size:0.8rem; color:var(--color-text-muted); margin-bottom:12px; padding:8px; background:var(--color-surface); border-radius:var(--radius-sm);">
-              Total: {{ foodForm.servingQuantity }} {{ foodForm.servingUnit }} = {{ foodForm.quantityGrams }}g
+            <div class="serving-preview">
+              Total: <strong>{{ foodForm.servingQuantity }} {{ foodForm.servingUnit }}</strong> = <strong>{{ foodForm.quantityGrams }}g</strong>
             </div>
           }
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <hr class="divider" />
+          <div class="macros-grid">
             <div class="field">
               <label>Calorias (kcal)</label>
               <input type="number" [(ngModel)]="foodForm.calories" name="calories" min="0" step="0.01" />
@@ -519,9 +610,9 @@ import { DrawerComponent } from '../../shared/components/drawer/drawer.component
           </div>
           <div class="field">
             <label>Tipo de medida</label>
-            <div style="display:flex; gap:8px;">
-              <button type="button" [style.background]="foodForm.measureType==='grams' ? 'var(--color-primary)' : 'var(--color-surface)'" [style.color]="foodForm.measureType==='grams' ? '#fff' : 'var(--color-text)'" style="border:1px solid var(--color-border); border-radius:var(--radius-sm); padding:6px 16px; cursor:pointer; font-size:0.85rem;" (click)="foodForm.measureType='grams'; onMeasureTypeChange()">Gramas</button>
-              <button type="button" [style.background]="foodForm.measureType==='unit' ? 'var(--color-primary)' : 'var(--color-surface)'" [style.color]="foodForm.measureType==='unit' ? '#fff' : 'var(--color-text)'" style="border:1px solid var(--color-border); border-radius:var(--radius-sm); padding:6px 16px; cursor:pointer; font-size:0.85rem;" (click)="foodForm.measureType='unit'; onMeasureTypeChange()">Unidades</button>
+            <div class="measure-toggle">
+              <button type="button" class="measure-btn" [class.active]="foodForm.measureType==='grams'" (click)="foodForm.measureType='grams'; onMeasureTypeChange()">Gramas</button>
+              <button type="button" class="measure-btn" [class.active]="foodForm.measureType==='unit'" (click)="foodForm.measureType='unit'; onMeasureTypeChange()">Unidades</button>
             </div>
           </div>
           @if (foodForm.measureType === 'grams') {
@@ -530,7 +621,7 @@ import { DrawerComponent } from '../../shared/components/drawer/drawer.component
               <input type="number" [(ngModel)]="foodForm.quantityGrams" name="quantityGrams" min="0" required />
             </div>
           } @else {
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div class="form-grid-2">
               <div class="field">
                 <label>Quantidade</label>
                 <input type="number" [(ngModel)]="foodForm.servingQuantity" name="servingQuantity" min="0.1" step="0.5" (input)="onServingChange()" />
@@ -544,11 +635,12 @@ import { DrawerComponent } from '../../shared/components/drawer/drawer.component
               <label>Gramas por unidade</label>
               <input type="number" [(ngModel)]="foodForm.servingGrams" name="servingGrams" min="1" (input)="onServingChange()" />
             </div>
-            <div style="font-size:0.8rem; color:var(--color-text-muted); margin-bottom:12px; padding:8px; background:var(--color-surface); border-radius:var(--radius-sm);">
-              Total: {{ foodForm.servingQuantity }} {{ foodForm.servingUnit }} = {{ foodForm.quantityGrams }}g
+            <div class="serving-preview">
+              Total: <strong>{{ foodForm.servingQuantity }} {{ foodForm.servingUnit }}</strong> = <strong>{{ foodForm.quantityGrams }}g</strong>
             </div>
           }
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <hr class="divider" />
+          <div class="macros-grid">
             <div class="field">
               <label>Calorias (kcal)</label>
               <input type="number" [(ngModel)]="foodForm.calories" name="calories" min="0" step="0.01" />
@@ -612,7 +704,7 @@ export class DietsComponent implements OnInit {
 
   dietForm = { name: '', description: '' };
   mealForm = { name: '', mealOrder: 0, mealTime: '' };
-  foodForm = { foodName: '', quantityGrams: 100, calories: 0, protein: 0, carbs: 0, fat: 0, measureType: 'grams' as 'grams' | 'unit', servingUnit: 'unidade', servingGrams: 50, servingQuantity: 1 };
+  foodForm = { foodName: '', quantityGrams: 100, calories: 0, protein: 0, carbs: 0, fat: 0, measureType: 'grams' as 'grams' | 'unit', servingUnit: 'unidade', servingGrams: 50, servingQuantity: 1, baseCal: 0, baseProt: 0, baseCarb: 0, baseFat: 0 };
 
   foodSearchQuery = '';
   searchResults = signal<FoodSearchResult[]>([]);
@@ -750,7 +842,7 @@ export class DietsComponent implements OnInit {
   openAddFood(diet: Diet, meal: Meal) {
     this.activeDiet.set(diet);
     this.activeMeal.set(meal);
-    this.foodForm = { foodName: '', quantityGrams: 100, calories: 0, protein: 0, carbs: 0, fat: 0, measureType: 'grams', servingUnit: 'unidade', servingGrams: 50, servingQuantity: 1 };
+    this.foodForm = { foodName: '', quantityGrams: 100, calories: 0, protein: 0, carbs: 0, fat: 0, measureType: 'grams', servingUnit: 'unidade', servingGrams: 50, servingQuantity: 1, baseCal: 0, baseProt: 0, baseCarb: 0, baseFat: 0 };
     this.foodSearchQuery = '';
     this.searchResults.set([]);
     this.selectedFood.set(null);
@@ -789,15 +881,19 @@ export class DietsComponent implements OnInit {
   }
 
   recalcMacros() {
-    const food = this.selectedFood();
-    if (!food) return;
+    const searchFood = this.selectedFood();
+    const base = searchFood
+      ? { cal: searchFood.calories, prot: searchFood.protein, carb: searchFood.carbs, fat: searchFood.fat }
+      : { cal: this.foodForm.baseCal, prot: this.foodForm.baseProt, carb: this.foodForm.baseCarb, fat: this.foodForm.baseFat };
+    if (!base.cal && !base.prot && !base.carb && !base.fat) return;
     const grams = this.foodForm.measureType === 'unit'
-      ? this.foodForm.servingQuantity * this.foodForm.servingGrams
-      : this.foodForm.quantityGrams;
-    this.foodForm.calories = parseFloat((food.calories * grams / 100).toFixed(2));
-    this.foodForm.protein = parseFloat((food.protein * grams / 100).toFixed(2));
-    this.foodForm.carbs = parseFloat((food.carbs * grams / 100).toFixed(2));
-    this.foodForm.fat = parseFloat((food.fat * grams / 100).toFixed(2));
+      ? (Number(this.foodForm.servingQuantity) || 0) * (Number(this.foodForm.servingGrams) || 0)
+      : Number(this.foodForm.quantityGrams) || 0;
+    if (grams <= 0) return;
+    this.foodForm.calories = parseFloat((base.cal * grams / 100).toFixed(2));
+    this.foodForm.protein = parseFloat((base.prot * grams / 100).toFixed(2));
+    this.foodForm.carbs = parseFloat((base.carb * grams / 100).toFixed(2));
+    this.foodForm.fat = parseFloat((base.fat * grams / 100).toFixed(2));
     if (this.foodForm.measureType === 'unit') {
       this.foodForm.quantityGrams = grams;
     }
@@ -850,6 +946,7 @@ export class DietsComponent implements OnInit {
     const hasUnit = !!food.servingUnit && !!food.servingGrams;
     const servingGrams = food.servingGrams ?? 50;
     const servingQty = hasUnit ? Math.round((food.quantityGrams / servingGrams) * 10) / 10 : 1;
+    const qty = food.quantityGrams || 100;
     this.foodForm = {
       foodName: food.foodName,
       quantityGrams: food.quantityGrams,
@@ -860,7 +957,11 @@ export class DietsComponent implements OnInit {
       measureType: hasUnit ? 'unit' : 'grams',
       servingUnit: food.servingUnit ?? 'unidade',
       servingGrams,
-      servingQuantity: servingQty
+      servingQuantity: servingQty,
+      baseCal: parseFloat(((food.calories / qty) * 100).toFixed(4)),
+      baseProt: parseFloat(((food.protein / qty) * 100).toFixed(4)),
+      baseCarb: parseFloat(((food.carbs / qty) * 100).toFixed(4)),
+      baseFat: parseFloat(((food.fat / qty) * 100).toFixed(4)),
     };
     this.errorMsg.set('');
     this.showEditFoodModal.set(true);

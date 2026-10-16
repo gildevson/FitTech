@@ -127,9 +127,17 @@ export class LoginComponent {
     this.error.set('');
 
     this.authService.login({ email: this.email, password: this.password }).subscribe({
-      next: () => this.router.navigate(['/dashboard']),
+      next: () => {
+        if (this.authService.currentUser()?.role !== 'admin') {
+          this.authService.logout();
+          this.error.set('Acesso restrito a administradores.');
+          this.loading.set(false);
+          return;
+        }
+        this.router.navigate(['/dashboard']);
+      },
       error: (err) => {
-        this.error.set(err.error?.message || 'Erro ao fazer login');
+        this.error.set(err.error?.message || 'Credenciais inválidas.');
         this.loading.set(false);
       }
     });

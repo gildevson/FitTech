@@ -17,6 +17,9 @@ export const routes: Routes = [
       { path: 'workouts', loadComponent: () => import('./features/workouts/workouts.component').then(m => m.WorkoutsComponent) },
       { path: 'users', loadComponent: () => import('./features/users/users.component').then(m => m.UsersComponent) },
       { path: 'diets', loadComponent: () => import('./features/diets/diets.component').then(m => m.DietsComponent) },
+      { path: 'user-diets', loadComponent: () => import('./features/user-diets/user-diets.component').then(m => m.UserDietsComponent) },
+      { path: 'user-workouts', loadComponent: () => import('./features/user-workouts/user-workouts.component').then(m => m.UserWorkoutsComponent) },
+      { path: 'alunos', loadComponent: () => import('./features/alunos/alunos.component').then(m => m.AlunosComponent) },
     ]
   }
 ];

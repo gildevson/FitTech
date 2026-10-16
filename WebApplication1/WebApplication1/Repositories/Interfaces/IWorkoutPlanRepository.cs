@@ -1,6 +1,6 @@
 public interface IWorkoutPlanRepository
 {
-    Task<IEnumerable<WorkoutPlan>> GetAllAsync();
+    Task<IEnumerable<WorkoutPlan>> GetAllAsync(bool systemOnly = false, Guid? userId = null);
     Task<WorkoutPlan?> GetByIdAsync(Guid id);
     Task<Guid> CreateAsync(WorkoutPlan plan);
     Task<bool> UpdateAsync(WorkoutPlan plan);

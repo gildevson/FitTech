@@ -15,7 +15,7 @@ public class WorkoutExerciseRepository : IWorkoutExerciseRepository
         return await conn.QueryAsync<WorkoutExercise>("""
             SELECT we.id, we.workout_id AS WorkoutId, we.exercise_id AS ExerciseId,
                    we.sets, we.reps, we.rest_seconds AS RestSeconds,
-                   we.order_index AS OrderIndex, we.notes,
+                   we.order_index AS OrderIndex, we.notes, we.set_weights AS SetWeightsJson,
                    e.name AS ExerciseName, mg.name AS MuscleGroupName
             FROM workout_exercises we
             JOIN exercises e ON we.exercise_id = e.id
@@ -31,7 +31,7 @@ public class WorkoutExerciseRepository : IWorkoutExerciseRepository
         return await conn.QueryFirstOrDefaultAsync<WorkoutExercise>("""
             SELECT we.id, we.workout_id AS WorkoutId, we.exercise_id AS ExerciseId,
                    we.sets, we.reps, we.rest_seconds AS RestSeconds,
-                   we.order_index AS OrderIndex, we.notes,
+                   we.order_index AS OrderIndex, we.notes, we.set_weights AS SetWeightsJson,
                    e.name AS ExerciseName, mg.name AS MuscleGroupName
             FROM workout_exercises we
             JOIN exercises e ON we.exercise_id = e.id
@@ -50,14 +50,19 @@ public class WorkoutExerciseRepository : IWorkoutExerciseRepository
             """, workoutExercise);
     }
 
-    public async Task<bool> UpdateAsync(WorkoutExercise workoutExercise)
+    public async Task<bool> UpdateAsync(WorkoutExercise workoutExercise, bool updateWeights = false)
     {
         using var conn = _connectionFactory.CreateConnection();
         var rows = await conn.ExecuteAsync("""
             UPDATE workout_exercises SET sets = @Sets, reps = @Reps,
-            rest_seconds = @RestSeconds, order_index = @OrderIndex, notes = @Notes
+            rest_seconds = @RestSeconds, order_index = @OrderIndex, notes = @Notes,
+            set_weights = CASE WHEN @UpdateWeights THEN @SetWeightsJson ELSE set_weights END
             WHERE id = @Id
-            """, workoutExercise);
+            """, new
+            {
+                workoutExercise.Id, workoutExercise.Sets, workoutExercise.Reps, workoutExercise.RestSeconds,
+                workoutExercise.OrderIndex, workoutExercise.Notes, workoutExercise.SetWeightsJson, UpdateWeights = updateWeights
+            });
         return rows > 0;
     }
 

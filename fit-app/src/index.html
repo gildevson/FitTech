@@ -15,6 +15,10 @@
     <link rel="apple-touch-icon" href="assets/icon/icon-192.png" />
     <link rel="manifest" href="manifest.webmanifest" />
     <meta name="theme-color" content="#0b1020" />
+    <!-- Aplica o tema salvo antes de desenhar a tela (evita piscar escuro→claro) -->
+    <script>
+      try { if (localStorage.getItem('fitmob_theme') === 'light') document.documentElement.classList.add('theme-light'); } catch (e) {}
+    </script>
   </head>
   <body>
     <app-root></app-root>

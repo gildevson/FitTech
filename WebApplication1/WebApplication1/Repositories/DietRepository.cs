@@ -9,11 +9,17 @@ public class DietRepository : IDietRepository
         _connectionFactory = connectionFactory;
     }
 
-    public async Task<IEnumerable<Diet>> GetAllAsync()
+    public async Task<IEnumerable<DietResponseDto>> GetAllAsync()
     {
         using var conn = _connectionFactory.CreateConnection();
-        return await conn.QueryAsync<Diet>(
-            "SELECT id, name, description, created_by AS CreatedBy, created_at AS CreatedAt FROM diets ORDER BY created_at DESC");
+        var rows = await conn.QueryAsync<DietResponseDto>("""
+            SELECT d.id, d.name, d.description, d.created_by AS CreatedBy, u.name AS CreatedByName, d.created_at AS CreatedAt
+            FROM diets d
+            LEFT JOIN users u ON u.id = d.created_by
+            ORDER BY d.created_at DESC
+            """);
+        foreach (var r in rows) r.Meals = new List<MealResponseDto>();
+        return rows;
     }
 
     public async Task<DietResponseDto?> GetByIdAsync(Guid id)
@@ -27,7 +33,7 @@ public class DietRepository : IDietRepository
         if (diet is null) return null;
 
         var meals = await conn.QueryAsync<Meal>(
-            "SELECT id, diet_id AS DietId, name, meal_order AS MealOrder, meal_time AS MealTime FROM meals WHERE diet_id = @DietId ORDER BY meal_order",
+            "SELECT id, diet_id AS DietId, name, meal_order AS MealOrder, meal_time AS MealTime, created_by AS CreatedBy FROM meals WHERE diet_id = @DietId ORDER BY meal_order",
             new { DietId = id });
 
         var mealList = meals.ToList();
@@ -37,7 +43,7 @@ public class DietRepository : IDietRepository
         foreach (var meal in mealList)
         {
             var foods = await conn.QueryAsync<MealFood>(
-                "SELECT id, meal_id AS MealId, food_name AS FoodName, quantity_grams AS QuantityGrams, calories, protein, carbs, fat, serving_unit AS ServingUnit, serving_grams AS ServingGrams FROM meal_foods WHERE meal_id = @MealId ORDER BY id",
+                "SELECT id, meal_id AS MealId, food_name AS FoodName, quantity_grams AS QuantityGrams, calories, protein, carbs, fat, serving_unit AS ServingUnit, serving_grams AS ServingGrams, created_by AS CreatedBy FROM meal_foods WHERE meal_id = @MealId ORDER BY id",
                 new { MealId = meal.Id });
 
             mealDtos.Add(new MealResponseDto
@@ -47,6 +53,7 @@ public class DietRepository : IDietRepository
                 Name = meal.Name,
                 MealOrder = meal.MealOrder,
                 MealTime = meal.MealTime,
+                CreatedBy = meal.CreatedBy,
                 Foods = foods.Select(f => new MealFoodResponseDto
                 {
                     Id = f.Id,
@@ -58,7 +65,8 @@ public class DietRepository : IDietRepository
                     Carbs = f.Carbs,
                     Fat = f.Fat,
                     ServingUnit = f.ServingUnit,
-                    ServingGrams = f.ServingGrams
+                    ServingGrams = f.ServingGrams,
+                    CreatedBy = f.CreatedBy
                 }).ToList()
             });
         }
@@ -68,6 +76,7 @@ public class DietRepository : IDietRepository
             Id = diet.Id,
             Name = diet.Name,
             Description = diet.Description,
+            CreatedBy = diet.CreatedBy,
             CreatedAt = diet.CreatedAt,
             Meals = mealDtos
         };

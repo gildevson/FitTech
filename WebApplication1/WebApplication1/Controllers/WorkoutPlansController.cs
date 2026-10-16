@@ -12,8 +12,8 @@ public class WorkoutPlansController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll() =>
-        Ok(await _repository.GetAllAsync());
+    public async Task<IActionResult> GetAll([FromQuery] bool systemOnly = false, [FromQuery] Guid? userId = null) =>
+        Ok(await _repository.GetAllAsync(systemOnly, userId));
 
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id)
@@ -25,7 +25,7 @@ public class WorkoutPlansController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateWorkoutPlanDto dto)
     {
-        var plan = new WorkoutPlan { Name = dto.Name, Description = dto.Description };
+        var plan = new WorkoutPlan { Name = dto.Name, Description = dto.Description, UserId = dto.UserId };
         var id = await _repository.CreateAsync(plan);
         plan.Id = id;
         return CreatedAtAction(nameof(GetById), new { id }, plan);

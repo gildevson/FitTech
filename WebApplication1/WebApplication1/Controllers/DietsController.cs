@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using System.Text.Json;
 
 [ApiController]
@@ -99,7 +100,45 @@ public class DietsController : ControllerBase
         new("Mel", 309, 0.3, 84.0, 0.0),
         new("Açúcar refinado", 387, 0.0, 99.9, 0.0),
         new("Whey protein", 380, 76.0, 7.0, 6.0),
+        new("Caseína proteína", 360, 80.0, 3.0, 2.0),
+        new("Albumina em pó", 370, 83.0, 2.0, 1.5),
+        new("Creatina monoidratada", 0, 0.0, 0.0, 0.0),
+        new("Cafeína anidra", 0, 0.0, 0.0, 0.0),
+        new("BCAA em pó", 240, 60.0, 0.0, 0.0),
+        new("Glutamina em pó", 0, 0.0, 0.0, 0.0),
+        new("Vitamina C (ácido ascórbico)", 0, 0.0, 0.0, 0.0),
+        new("Vitamina D3", 0, 0.0, 0.0, 0.0),
+        new("Vitamina E", 0, 0.0, 0.0, 0.0),
+        new("Vitamina B12", 0, 0.0, 0.0, 0.0),
+        new("Vitamina B6", 0, 0.0, 0.0, 0.0),
+        new("Complexo B", 0, 0.0, 0.0, 0.0),
+        new("Multivitamínico", 0, 0.0, 0.0, 0.0),
+        new("Magnésio quelato", 0, 0.0, 0.0, 0.0),
+        new("Zinco quelato", 0, 0.0, 0.0, 0.0),
+        new("Ferro quelato", 0, 0.0, 0.0, 0.0),
+        new("Cálcio carbonato", 0, 0.0, 0.0, 0.0),
+        new("Potássio cloreto", 0, 0.0, 0.0, 0.0),
+        new("ZMA (zinco magnésio B6)", 0, 0.0, 0.0, 0.0),
+        new("Melatonina", 0, 0.0, 0.0, 0.0),
+        new("Maltodextrina", 380, 0.0, 95.0, 0.0),
+        new("Dextrose", 380, 0.0, 95.0, 0.0),
+        new("Colágeno hidrolisado", 350, 87.0, 0.0, 0.0),
+        new("Óleo de peixe ômega 3", 900, 0.0, 0.0, 100.0),
+        new("Linhaça dourada", 534, 18.3, 28.9, 42.2),
+        new("Chia em grãos", 486, 16.5, 42.1, 30.7),
+        new("Pasta de amendoim integral", 598, 26.0, 18.0, 51.0),
+        new("Amêndoa", 579, 21.2, 21.6, 49.9),
+        new("Nozes", 654, 15.2, 13.7, 65.2),
+        new("Biomassa de banana verde", 103, 1.5, 26.0, 0.1),
         new("Peito de peru", 119, 24.4, 0.0, 2.0),
+        new("Presunto de frango", 109, 15.0, 2.5, 4.5),
+        new("Iogurte grego natural", 97, 9.0, 4.0, 5.0),
+        new("Cottage", 98, 11.1, 3.4, 4.3),
+        new("Proteína vegetal de soja", 330, 52.0, 38.0, 1.0),
+        new("Aveia em flocos", 394, 13.9, 66.6, 8.5),
+        new("Tapioca granulada", 360, 0.2, 88.0, 0.3),
+        new("Cuscuz de milho cozido", 133, 1.4, 30.1, 0.5),
+        new("Quinoa cozida", 120, 4.4, 21.3, 1.9),
     ];
 
     [HttpGet("search-food")]
@@ -176,14 +215,7 @@ public class DietsController : ControllerBase
     public async Task<IActionResult> GetAll()
     {
         var diets = await _dietRepository.GetAllAsync();
-        return Ok(diets.Select(d => new DietResponseDto
-        {
-            Id = d.Id,
-            Name = d.Name,
-            Description = d.Description,
-            CreatedAt = d.CreatedAt,
-            Meals = new List<MealResponseDto>()
-        }));
+        return Ok(diets);
     }
 
     [HttpGet("{id:guid}")]
@@ -191,26 +223,75 @@ public class DietsController : ControllerBase
     {
         var diet = await _dietRepository.GetByIdAsync(id);
         if (diet is null) return NotFound();
+
+        // Aplica os horários pessoais do aluno logado
+        if (Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+        {
+            var custom = await _mealRepository.GetUserTimesAsync(userId, id);
+            foreach (var meal in diet.Meals)
+            {
+                if (!custom.TryGetValue(meal.Id, out var time)) continue;
+                meal.OriginalMealTime = meal.MealTime;
+                meal.MealTime = time;
+            }
+        }
         return Ok(diet);
+    }
+
+    /// <summary>
+    /// Aluno altera o horário de uma refeição. Na dieta que ele mesmo criou, muda a refeição;
+    /// numa dieta atribuída (compartilhada), grava um horário só dele.
+    /// </summary>
+    [HttpPut("meals/{mealId:guid}/time")]
+    public async Task<IActionResult> UpdateMyMealTime(Guid mealId, [FromBody] UpdateMealTimeDto dto)
+    {
+        if (!System.Text.RegularExpressions.Regex.IsMatch(dto.MealTime ?? "", @"^([01]\d|2[0-3]):[0-5]\d$"))
+            return BadRequest(new { message = "Horário inválido. Use HH:mm." });
+        if (!await _mealRepository.ExistsAsync(mealId)) return NotFound();
+
+        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        if (await _mealRepository.GetDietOwnerAsync(mealId) == userId)
+            await _mealRepository.UpdateTimeAsync(mealId, dto.MealTime);
+        else
+            await _mealRepository.SetUserTimeAsync(userId, mealId, dto.MealTime);
+
+        return NoContent();
+    }
+
+    /// <summary>Volta a refeição para o horário original da dieta.</summary>
+    [HttpDelete("meals/{mealId:guid}/time")]
+    public async Task<IActionResult> ResetMyMealTime(Guid mealId)
+    {
+        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        await _mealRepository.DeleteUserTimeAsync(userId, mealId);
+        return NoContent();
     }
 
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateDietDto dto)
     {
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        Guid? createdBy = Guid.TryParse(userIdClaim, out var uid) ? uid : null;
+
         var diet = new Diet
         {
             Name = dto.Name,
-            Description = dto.Description
+            Description = dto.Description,
+            CreatedBy = createdBy
         };
 
         var id = await _dietRepository.CreateAsync(diet);
         diet.Id = id;
+
+        var createdByName = User.FindFirstValue(ClaimTypes.Name);
 
         return CreatedAtAction(nameof(GetById), new { id }, new DietResponseDto
         {
             Id = diet.Id,
             Name = diet.Name,
             Description = diet.Description,
+            CreatedBy = createdBy,
+            CreatedByName = createdByName,
             CreatedAt = diet.CreatedAt,
             Meals = new List<MealResponseDto>()
         });
@@ -219,8 +300,24 @@ public class DietsController : ControllerBase
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id)
     {
+        // Dietas padrão (do personal/admin) são compartilhadas: só o dono ou o admin apaga
+        var diet = await _dietRepository.GetByIdAsync(id);
+        if (diet is null) return NotFound();
+        if (!User.IsInRole("admin") && diet.CreatedBy != CurrentUserId())
+            return Forbid();
+
         var deleted = await _dietRepository.DeleteAsync(id);
         return deleted ? NoContent() : NotFound();
+    }
+
+    /// <summary>Aluno tira uma dieta da própria lista (a dieta continua existindo para os outros).</summary>
+    [HttpDelete("{id:guid}/me")]
+    public async Task<IActionResult> RemoveFromMyList(Guid id)
+    {
+        var uid = CurrentUserId();
+        if (uid is null) return Unauthorized();
+        await _userDietRepository.UnassignAsync(uid.Value, id);
+        return NoContent();
     }
 
     [HttpPost("{id:guid}/meals")]
@@ -234,7 +331,8 @@ public class DietsController : ControllerBase
             DietId = id,
             Name = dto.Name,
             MealOrder = dto.MealOrder,
-            MealTime = dto.MealTime
+            MealTime = dto.MealTime,
+            CreatedBy = CurrentUserId()
         };
 
         var mealId = await _mealRepository.CreateAsync(meal);
@@ -272,6 +370,13 @@ public class DietsController : ControllerBase
     [HttpDelete("meals/{mealId:guid}")]
     public async Task<IActionResult> DeleteMeal(Guid mealId)
     {
+        // Dietas atribuídas são compartilhadas: apaga o admin, o dono da dieta ou quem adicionou a refeição
+        var uid = CurrentUserId();
+        if (!User.IsInRole("admin")
+            && await _mealRepository.GetDietOwnerAsync(mealId) != uid
+            && await _mealRepository.GetMealCreatorAsync(mealId) != uid)
+            return Forbid();
+
         var deleted = await _mealRepository.DeleteAsync(mealId);
         return deleted ? NoContent() : NotFound();
     }
@@ -290,7 +395,8 @@ public class DietsController : ControllerBase
             Fat = dto.Fat,
             OpenFoodFactsId = dto.OpenFoodFactsId,
             ServingUnit = dto.ServingUnit,
-            ServingGrams = dto.ServingGrams
+            ServingGrams = dto.ServingGrams,
+            CreatedBy = CurrentUserId()
         };
 
         var foodId = await _mealFoodRepository.CreateAsync(food);
@@ -334,15 +440,40 @@ public class DietsController : ControllerBase
     [HttpDelete("foods/{foodId:guid}")]
     public async Task<IActionResult> DeleteFood(Guid foodId)
     {
+        var uid = CurrentUserId();
+        if (!User.IsInRole("admin")
+            && await _mealRepository.GetDietOwnerByFoodAsync(foodId) != uid
+            && await _mealRepository.GetFoodCreatorAsync(foodId) != uid)
+            return Forbid();
+
         var deleted = await _mealFoodRepository.DeleteAsync(foodId);
         return deleted ? NoContent() : NotFound();
     }
 
+    private Guid? CurrentUserId() =>
+        Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : null;
+
     [HttpPost("assign")]
     public async Task<IActionResult> AssignToUser([FromBody] AssignDietDto dto)
     {
+        // Aluno só se atribui dietas que ele mesmo criou; atribuir para outros é do admin
+        if (!User.IsInRole("admin"))
+        {
+            var diet = await _dietRepository.GetByIdAsync(dto.DietId);
+            if (dto.UserId != CurrentUserId() || diet is null || diet.CreatedBy != CurrentUserId())
+                return Forbid();
+        }
         await _userDietRepository.AssignAsync(dto.UserId, dto.DietId);
         return Ok(new { message = "Dieta atribuída com sucesso" });
+    }
+
+    [HttpDelete("unassign")]
+    public async Task<IActionResult> UnassignFromUser([FromQuery] Guid userId, [FromQuery] Guid dietId)
+    {
+        if (!User.IsInRole("admin") && userId != CurrentUserId())
+            return Forbid();
+        await _userDietRepository.UnassignAsync(userId, dietId);
+        return NoContent();
     }
 
     [HttpGet("user/{userId:guid}")]

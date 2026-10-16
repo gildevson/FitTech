@@ -7,4 +7,7 @@ public interface IUserRepository
     Task<bool> UpdateAsync(User user);
     Task<bool> DeleteAsync(Guid id);
     Task<bool> ToggleActiveAsync(Guid id, bool isActive);
+    Task<IEnumerable<UsersByStateDto>> CountByStateAsync();
+    Task<bool> UpdateLanguageAsync(Guid id, string language);
+    Task<IEnumerable<UsersByCityDto>> CountByCityAsync(string state);
 }

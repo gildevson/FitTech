@@ -50,9 +50,13 @@ public class WorkoutExercisesController : ControllerBase
             Reps = dto.Reps,
             RestSeconds = dto.RestSeconds,
             OrderIndex = dto.OrderIndex,
-            Notes = dto.Notes
+            Notes = dto.Notes,
+            // Uma carga por série: corta o excesso se o número de séries diminuiu
+            SetWeights = dto.SetWeights?.Take(dto.Sets).ToList()
         };
-        var updated = await _repository.UpdateAsync(we);
+        if (dto.SetWeights?.Any(w => w is < 0 or > 1000) == true || dto.Sets is < 1 or > 50 || dto.RestSeconds is < 0 or > 3600)
+            return BadRequest(new { message = "Valores inválidos." });
+        var updated = await _repository.UpdateAsync(we, dto.SetWeightsProvided);
         return updated ? NoContent() : NotFound();
     }
 

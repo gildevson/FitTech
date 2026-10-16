@@ -73,6 +73,10 @@ export class DietService {
     return this.api.post<{ message: string }>('/api/diets/assign', dto);
   }
 
+  unassignFromUser(userId: string, dietId: string): Observable<void> {
+    return this.api.delete<void>(`/api/diets/unassign?userId=${userId}&dietId=${dietId}`);
+  }
+
   getUserDiets(userId: string): Observable<Diet[]> {
     return this.api.get<Diet[]>(`/api/diets/user/${userId}`);
   }

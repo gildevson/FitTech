@@ -1,0 +1,19 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "fit-app",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "--prefix",
+        "fit-app",
+        "ng",
+        "serve",
+        "--port",
+        "4300"
+      ],
+      "cwd": "fit-app",
+      "port": 4300
+    }
+  ]
+}
