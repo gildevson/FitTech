@@ -4,5 +4,5 @@
  */
 export const environment = {
   production: true,
-  apiUrl: 'https://fittech-api.onrender.com'
+  apiUrl: 'https://fittech-u93j.onrender.com'
 };
