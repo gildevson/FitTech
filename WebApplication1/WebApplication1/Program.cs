@@ -47,7 +47,11 @@ builder.Services.AddAuthorization();
 
 // Origens liberadas: localhost (desenvolvimento) + as do ambiente publicado,
 // separadas por vírgula na variável Cors__Origins (ex.: "https://fitmob.vercel.app,https://fitmob-admin.vercel.app")
-var corsOrigins = new[] { "http://localhost:4200", "https://localhost:4200", "http://localhost:4300", "https://localhost:4300", "http://localhost:5017" }
+var corsOrigins = new[]
+    {
+        "http://localhost:4200", "https://localhost:4200", "http://localhost:4300", "https://localhost:4300", "http://localhost:5017",
+        "https://fit-tech-sage.vercel.app" // app publicado no Vercel
+    }
     .Concat((builder.Configuration["Cors:Origins"] ?? "")
         .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
         .Select(o => o.TrimEnd('/')))
@@ -57,7 +61,11 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins(corsOrigins)
+        // Também aceita as prévias do Vercel deste projeto (https://fit-tech-xxxx-gilsons-projects-....vercel.app)
+        policy.SetIsOriginAllowed(origin =>
+                  corsOrigins.Contains(origin.TrimEnd('/'), StringComparer.OrdinalIgnoreCase) ||
+                  (Uri.TryCreate(origin, UriKind.Absolute, out var uri) && uri.Scheme == "https" &&
+                   uri.Host.StartsWith("fit-tech-") && uri.Host.EndsWith(".vercel.app")))
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
@@ -136,5 +144,8 @@ if (!app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+// Raiz: confirma que a API está no ar (útil para testar o endereço publicado no navegador)
+app.MapGet("/", () => Results.Ok(new { status = "ok", service = "FitTech API", time = DateTime.UtcNow }));
 
 app.Run();
