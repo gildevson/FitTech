@@ -31,7 +31,7 @@ import { addIcons } from 'ionicons';
 import {
   chevronForward, chevronDown, informationCircle, add,
   trashOutline, removeCircleOutline, checkmarkCircle, ellipseOutline,
-  checkmarkOutline, shareSocial, createOutline
+  checkmarkOutline, shareSocial, createOutline, playCircleOutline, chevronUp
 } from 'ionicons/icons';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -672,6 +672,24 @@ function localDateStr(d: Date): string {
       color: var(--ft-text-faint);
       margin-top: 2px;
     }
+    /* Pré-visualização do exercício (GIF), para quem não conhece pelo nome */
+    .session-ex-title { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .session-ex-thumb {
+      width: 48px; height: 48px; flex-shrink: 0; padding: 0; cursor: pointer;
+      border-radius: 10px; overflow: hidden; border: 1px solid var(--ft-border);
+      background: #ffffff; /* as imagens dos exercícios têm fundo branco */
+    }
+    .session-ex-thumb img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .session-ex-howto {
+      display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; padding: 0; cursor: pointer;
+      background: transparent; border: 0; font-family: inherit; font-size: 0.72rem; font-weight: 600; color: var(--ft-accent);
+    }
+    .session-ex-preview { padding: 12px 16px; border-bottom: 1px solid var(--ft-border); }
+    .session-ex-preview img {
+      width: 100%; max-height: 240px; object-fit: contain; display: block;
+      border-radius: var(--ft-radius); background: #ffffff;
+    }
+    .session-ex-preview p { margin: 10px 0 0; font-size: 0.82rem; line-height: 1.45; color: var(--ft-text-muted); }
     .session-ex-done-badge {
       font-size: 0.72rem;
       font-weight: 700;
@@ -842,29 +860,6 @@ function localDateStr(d: Date): string {
       padding: 4px 11px;
       cursor: pointer;
       white-space: nowrap;
-    }
-
-    /* ---- Modality picker inside modal ---- */
-    .modality-chips-modal {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-    .mod-chip {
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 0.78rem;
-      font-weight: 600;
-      cursor: pointer;
-      border: 1.5px solid var(--ft-border);
-      background: var(--ft-bg-elevated);
-      color: var(--ft-text-muted);
-      transition: background 0.15s, color 0.15s, border-color 0.15s;
-    }
-    .mod-chip.active {
-      background: var(--ft-accent);
-      color: #fff;
-      border-color: var(--ft-accent);
     }
 
     .empty-list {
@@ -1314,11 +1309,26 @@ function localDateStr(d: Date): string {
                 @for (ex of sessionExercises(); track ex.id) {
                   <div class="session-exercise-card" [class.all-done]="isExerciseDone(ex)">
                     <div class="session-ex-header">
-                      <div>
-                        <div class="session-ex-name">{{ ex.exerciseName }}</div>
-                        @if (ex.muscleGroupName) {
-                          <div class="session-ex-muscle">{{ ex.muscleGroupName }}</div>
+                      <div class="session-ex-title">
+                        @if (ex.exerciseImageUrl) {
+                          <button type="button" class="session-ex-thumb" (click)="togglePreview(ex.id)"
+                                  [attr.aria-label]="'session.how_to' | t">
+                            <img [src]="ex.exerciseImageUrl" [alt]="ex.exerciseName" loading="lazy" />
+                          </button>
                         }
+                        <div>
+                          <div class="session-ex-name">{{ ex.exerciseName }}</div>
+                          @if (ex.muscleGroupName) {
+                            <div class="session-ex-muscle">{{ ex.muscleGroupName }}</div>
+                          }
+                          @if (ex.exerciseImageUrl || ex.exerciseDescription) {
+                            <button type="button" class="session-ex-howto" (click)="togglePreview(ex.id)"
+                                    [attr.aria-expanded]="previewExerciseId() === ex.id">
+                              <ion-icon [name]="previewExerciseId() === ex.id ? 'chevron-up' : 'play-circle-outline'"></ion-icon>
+                              {{ (previewExerciseId() === ex.id ? 'session.hide_how_to' : 'session.how_to') | t }}
+                            </button>
+                          }
+                        </div>
                       </div>
                       @if (isExerciseDone(ex)) {
                         <span class="session-ex-done-badge">{{ 'session.complete' | t }}</span>
@@ -1328,6 +1338,16 @@ function localDateStr(d: Date): string {
                         </span>
                       }
                     </div>
+                    @if (previewExerciseId() === ex.id) {
+                      <div class="session-ex-preview">
+                        @if (ex.exerciseImageUrl) {
+                          <img [src]="ex.exerciseImageUrl" [alt]="ex.exerciseName" />
+                        }
+                        @if (ex.exerciseDescription) {
+                          <p>{{ ex.exerciseDescription }}</p>
+                        }
+                      </div>
+                    }
                     <div class="session-sets">
                       @for (set of getSetArray(ex); track set; let i = $index) {
                         <div class="session-set-row" [class.done]="isSetDone(ex.id, i)"
@@ -1396,15 +1416,12 @@ function localDateStr(d: Date): string {
                 @if (adminPlans().length === 0) {
                   <p style="font-size:0.82rem;color:var(--ft-muted,#888);margin:4px 0 0;">{{ 'create.loading_modalities' | t }}</p>
                 } @else {
-                  <div class="modality-chips-modal">
+                  <select class="form-select" [(ngModel)]="createModalityId">
+                    <option value="">{{ 'create.modality_none' | t }}</option>
                     @for (plan of adminPlans(); track plan.id) {
-                      <button class="mod-chip"
-                        [class.active]="createModalityId === plan.id"
-                        (click)="selectModality(plan)">
-                        {{ plan.name }}
-                      </button>
+                      <option [value]="plan.id">{{ plan.name }}</option>
                     }
-                  </div>
+                  </select>
                 }
               </div>
 
@@ -1582,7 +1599,8 @@ export class TreinosPage implements OnInit, OnDestroy {
   constructor() {
     addIcons({
       chevronForward, chevronDown, informationCircle, add,
-      trashOutline, removeCircleOutline, checkmarkCircle, ellipseOutline, checkmarkOutline, shareSocial, createOutline
+      trashOutline, removeCircleOutline, checkmarkCircle, ellipseOutline, checkmarkOutline, shareSocial, createOutline,
+      playCircleOutline, chevronUp
     });
   }
 
@@ -1654,10 +1672,6 @@ export class TreinosPage implements OnInit, OnDestroy {
     return day >= 0 && day <= 6 ? this.i18n.t(`day.${day}`) : this.i18n.t('day.unknown', { n: day });
   }
 
-  selectModality(plan: WorkoutPlan) {
-    this.createModalityId = this.createModalityId === plan.id ? '' : plan.id;
-  }
-
   togglePlan(planId: string) {
     this.expandedPlanId.set(this.expandedPlanId() === planId ? null : planId);
     this.expandedId.set(null);
@@ -1720,6 +1734,12 @@ export class TreinosPage implements OnInit, OnDestroy {
   sessionReps = signal<Record<string, (number | null)[]>>({});
   // Última carga usada em cada série ("exId:índice"), para mostrar "últ. 40 kg"
   lastSets = signal<Record<string, { weightKg: number | null; reps: number | null }>>({});
+  // Exercício com a pré-visualização (GIF + descrição) aberta na sessão
+  previewExerciseId = signal<string | null>(null);
+
+  togglePreview(exId: string) {
+    this.previewExerciseId.update(id => (id === exId ? null : exId));
+  }
 
   private initSessionSets(exercises: WorkoutExercise[]) {
     this.sessionExercises.set(exercises);

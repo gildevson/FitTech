@@ -118,6 +118,26 @@ public class WorkoutLogRepository : IWorkoutLogRepository
             new { UserId = userId, From = from.Date, To = to.Date });
     }
 
+    /// <summary>Dias treinados/pulados e total de treinos por mês, a partir de uma data. Meses sem registro não aparecem.</summary>
+    public async Task<IEnumerable<MonthlyFrequencyDto>> GetMonthlyFrequencyAsync(Guid userId, DateTime from)
+    {
+        using var conn = _db.CreateConnection();
+        return await conn.QueryAsync<MonthlyFrequencyDto>(
+            @"SELECT EXTRACT(YEAR FROM day)::int AS Year, EXTRACT(MONTH FROM day)::int AS Month,
+                     COUNT(*) FILTER (WHERE done > 0)::int AS DoneDays,
+                     COUNT(*) FILTER (WHERE done = 0)::int AS SkippedDays,
+                     SUM(done)::int AS Workouts
+              FROM (
+                  SELECT logged_date AS day, COUNT(*) FILTER (WHERE status = 'done') AS done
+                  FROM workout_logs
+                  WHERE user_id = @UserId AND logged_date >= @From
+                  GROUP BY logged_date
+              ) d
+              GROUP BY 1, 2
+              ORDER BY 1, 2",
+            new { UserId = userId, From = from.Date });
+    }
+
     public async Task<bool> ReplaceSetsAsync(Guid logId, Guid userId, IEnumerable<WorkoutSetLogDto> sets)
     {
         using var conn = _db.CreateConnection();

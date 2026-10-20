@@ -73,6 +73,8 @@ export interface WorkoutExercise {
   exerciseId: string;
   exerciseName?: string;
   muscleGroupName?: string;
+  exerciseImageUrl?: string | null;
+  exerciseDescription?: string | null;
   sets: number;
   reps: string;
   restSeconds: number;
@@ -156,6 +158,15 @@ export interface CalendarWorkoutLog {
   planName: string;
   status: 'done' | 'skipped';
   skipReason?: string | null;
+}
+
+/** Resumo de um mês para comparar frequência (GET /api/workoutlogs/me/monthly) */
+export interface MonthlyFrequency {
+  year: number;
+  month: number;
+  doneDays: number;
+  skippedDays: number;
+  workouts: number;
 }
 
 export interface AssignedWorkout {

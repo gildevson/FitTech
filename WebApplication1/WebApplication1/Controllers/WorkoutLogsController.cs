@@ -34,6 +34,17 @@ public class WorkoutLogsController : ControllerBase
         return Ok(logs);
     }
 
+    /// <summary>Resumo dos últimos meses (incluindo o atual) para comparar a frequência.</summary>
+    [HttpGet("me/monthly")]
+    public async Task<IActionResult> GetMyMonthly([FromQuery] int months = 6)
+    {
+        months = Math.Clamp(months, 1, 24);
+        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var today = TodayInBrazil();
+        var from = new DateTime(today.Year, today.Month, 1).AddMonths(-(months - 1));
+        return Ok(await _repo.GetMonthlyFrequencyAsync(userId, from));
+    }
+
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateWorkoutLogDto dto)
     {

@@ -1,11 +1,11 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { IonIcon } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { chevronBack, chevronForward, checkmarkCircle, closeCircle } from 'ionicons/icons';
+import { chevronBack, chevronForward, checkmarkCircle, closeCircle, trendingUp, trendingDown, removeOutline } from 'ionicons/icons';
 import { TPipe } from '../../core/i18n/t.pipe';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { ApiService } from '../../core/services/api.service';
-import { CalendarWorkoutLog } from '../../core/models';
+import { CalendarWorkoutLog, MonthlyFrequency } from '../../core/models';
 
 type DayStatus = 'done' | 'skipped' | null;
 
@@ -51,6 +51,15 @@ function localDateStr(d: Date): string {
     .freq-stat.accent strong { color: var(--ft-accent); }
     .freq-stat small { font-size: 0.68rem; color: var(--ft-text-muted); }
 
+    .freq-compare {
+      display: flex; align-items: center; gap: 8px; margin: -4px 0 14px; padding: 8px 10px; border-radius: 10px;
+      font-size: 0.78rem; color: var(--ft-text-muted); background: var(--ft-bg-elevated);
+    }
+    .freq-compare ion-icon { font-size: 1.1rem; flex-shrink: 0; }
+    .freq-compare strong { color: var(--ft-text); }
+    .freq-compare.up ion-icon, .freq-compare.up strong { color: var(--ft-success); }
+    .freq-compare.down ion-icon, .freq-compare.down strong { color: var(--ft-accent); }
+
     .freq-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
     .freq-weekday {
       text-align: center; font-size: 0.66rem; font-weight: 700; color: var(--ft-text-faint);
@@ -93,6 +102,20 @@ function localDateStr(d: Date): string {
     .agenda-text strong { font-size: 0.9rem; color: var(--ft-text); }
     .agenda-text small { font-size: 0.74rem; color: var(--ft-text-muted); }
 
+    .history { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--ft-border); }
+    .history-title { margin: 0 0 10px; font-size: 0.85rem; font-weight: 700; color: var(--ft-text); }
+    .history-bars { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; align-items: end; }
+    .history-bar {
+      display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 0; cursor: pointer;
+      background: transparent; border: 0; font-family: inherit; color: var(--ft-text-muted);
+    }
+    .history-value { font-size: 0.72rem; font-weight: 700; color: var(--ft-text); }
+    .history-track { width: 100%; height: 80px; display: flex; align-items: flex-end; border-radius: 8px; background: var(--ft-bg-elevated); }
+    .history-fill { width: 100%; min-height: 3px; border-radius: 8px; background: var(--ft-text-faint); transition: height 0.3s; }
+    .history-bar.active .history-fill { background: var(--ft-accent); }
+    .history-bar.active .history-label { color: var(--ft-accent); font-weight: 700; }
+    .history-label { font-size: 0.68rem; text-transform: capitalize; }
+
     .freq-error { margin: 10px 0 0; font-size: 0.78rem; color: var(--ft-text-muted); text-align: center; }
   `],
   template: `
@@ -122,6 +145,20 @@ function localDateStr(d: Date): string {
           <small>{{ 'freq.per_week' | t }}</small>
         </div>
       </div>
+
+      @if (comparison(); as c) {
+        <div class="freq-compare" [class.up]="c.diff > 0" [class.down]="c.diff < 0">
+          <ion-icon [name]="c.diff > 0 ? 'trending-up' : c.diff < 0 ? 'trending-down' : 'remove-outline'"></ion-icon>
+          <span>
+            @if (c.diff === 0) {
+              {{ 'freq.compare_same' | t: { month: c.prevLabel } }}
+            } @else {
+              <strong>{{ c.diff > 0 ? '+' : '' }}{{ c.diff }}</strong>
+              {{ (c.diff === 1 || c.diff === -1 ? 'freq.compare_day' : 'freq.compare_days') | t: { month: c.prevLabel, prev: c.prev } }}
+            }
+          </span>
+        </div>
+      }
 
       <div class="freq-grid">
         @for (w of weekdays(); track $index) {
@@ -169,6 +206,20 @@ function localDateStr(d: Date): string {
         </div>
       }
 
+      <div class="history">
+        <p class="history-title">{{ 'freq.history' | t }}</p>
+        <div class="history-bars">
+          @for (b of history(); track b.key) {
+            <button type="button" class="history-bar" [class.active]="b.active"
+                    [attr.aria-label]="b.label + ': ' + b.doneDays" (click)="goToMonth(b.date)">
+              <span class="history-value">{{ b.doneDays }}</span>
+              <span class="history-track"><span class="history-fill" [style.height.%]="b.percent"></span></span>
+              <span class="history-label">{{ b.label }}</span>
+            </button>
+          }
+        </div>
+      </div>
+
       @if (error()) {
         <p class="freq-error">{{ 'freq.error' | t }}</p>
       }
@@ -187,12 +238,18 @@ export class FrequencyCalendarComponent implements OnInit {
   /** Dia aberto na agenda (começa em hoje) */
   readonly selectedDate = signal<string | null>(localDateStr(new Date()));
 
+  /** Resumo dos últimos meses, para comparar (meses sem treino não vêm da API) */
+  private readonly monthly = signal<MonthlyFrequency[]>([]);
+  private static readonly SUMMARY_MONTHS = 12;
+
   constructor() {
-    addIcons({ chevronBack, chevronForward, checkmarkCircle, closeCircle });
+    addIcons({ chevronBack, chevronForward, checkmarkCircle, closeCircle, trendingUp, trendingDown, removeOutline });
   }
 
   ngOnInit() {
     this.load();
+    this.api.get<MonthlyFrequency[]>('/api/workoutlogs/me/monthly', { months: FrequencyCalendarComponent.SUMMARY_MONTHS })
+      .subscribe({ next: m => this.monthly.set(m ?? []), error: () => this.monthly.set([]) });
   }
 
   private load() {
@@ -266,9 +323,50 @@ export class FrequencyCalendarComponent implements OnInit {
     return { done, skipped, perWeek: perWeek.toLocaleString(this.i18n.locale(), { maximumFractionDigits: 1 }) };
   });
 
+  /** Dias treinados de um mês pelo resumo (0 se não treinou); null se o mês é mais antigo que o resumo */
+  private doneDaysOf(d: Date): number | null {
+    const oldest = new Date(new Date().getFullYear(), new Date().getMonth() - (FrequencyCalendarComponent.SUMMARY_MONTHS - 1), 1);
+    if (d < oldest) return null;
+    return this.monthly().find(m => m.year === d.getFullYear() && m.month === d.getMonth() + 1)?.doneDays ?? 0;
+  }
+
+  /** Dias treinados no mês exibido comparados com o mês anterior */
+  readonly comparison = computed(() => {
+    const m = this.month();
+    const prevDate = new Date(m.getFullYear(), m.getMonth() - 1, 1);
+    const prev = this.doneDaysOf(prevDate);
+    if (prev === null) return null;
+    const prevLabel = prevDate.toLocaleDateString(this.i18n.locale(), { month: 'long' });
+    return { diff: this.stats().done - prev, prev, prevLabel };
+  });
+
+  /** Barras dos últimos 6 meses (o atual por último), destacando o mês exibido */
+  readonly history = computed(() => {
+    const now = new Date();
+    const shown = this.month().getTime();
+    const bars = Array.from({ length: 6 }, (_, i) => {
+      const date = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1);
+      return {
+        key: localDateStr(date),
+        date,
+        doneDays: this.doneDaysOf(date) ?? 0,
+        label: date.toLocaleDateString(this.i18n.locale(), { month: 'short' }).replace('.', ''),
+        active: date.getTime() === shown,
+        percent: 0
+      };
+    });
+    const max = Math.max(...bars.map(b => b.doneDays), 1);
+    bars.forEach(b => b.percent = (b.doneDays / max) * 100);
+    return bars;
+  });
+
   changeMonth(delta: number) {
     const m = this.month();
-    this.month.set(new Date(m.getFullYear(), m.getMonth() + delta, 1));
+    this.goToMonth(new Date(m.getFullYear(), m.getMonth() + delta, 1));
+  }
+
+  goToMonth(date: Date) {
+    this.month.set(this.firstOfMonth(date));
     // No mês atual abre a agenda de hoje; nos outros, espera o usuário tocar num dia
     this.selectedDate.set(this.isCurrentMonth() ? localDateStr(new Date()) : null);
     this.load();

@@ -28,7 +28,7 @@ import { add, trash, bodyOutline, calendarOutline, chevronDown, shareSocial, sta
 import { ApiService } from '../../core/services/api.service';
 import { BodyMeasurement } from '../../core/models';
 import { ChartPoint, LineChartComponent } from '../../shared/line-chart/line-chart.component';
-import { ProgressRow, ProgressShareService } from '../../core/services/progress-share.service';
+import { ProgressRow, ProgressShareService, compositionVerdict } from '../../core/services/progress-share.service';
 
 type Sex = 'M' | 'F';
 interface BodyProfile { sex: Sex | null; heightCm: number | null; birthDate: string | null; }
@@ -245,6 +245,8 @@ interface Entry { item: BodyMeasurement; rows: Row[]; bf: number | null; bmi: nu
     .bf-result { margin-top: 12px; padding: 10px 12px; border-radius: var(--ft-radius); font-weight: 800; font-size: 0.95rem; background: var(--ft-bg-elevated); border: 1px solid var(--ft-border); }
     .bf-result.good { color: var(--ft-success); }
     .bf-result.bad { color: var(--ft-accent); }
+    .bf-result.mixed { color: #f5a524; }
+    .bf-result.verdict { border-style: dashed; }
     .bf-note { margin: 10px 0 0; font-size: 0.7rem; color: var(--ft-text-faint); line-height: 1.4; }
     .cell.bf { grid-column: 1 / -1; border-color: var(--ft-accent); background: var(--ft-accent-soft); }
 
@@ -611,6 +613,12 @@ interface Entry { item: BodyMeasurement; rows: Row[]; bf: number | null; bmi: nu
                 <div class="bf-result" [class.good]="m.leanDiff > 0" [class.bad]="m.leanDiff < 0" style="margin-top: 8px;">
                   {{ (m.leanDiff >= 0 ? 'meas.lean_gained' : 'meas.lean_lost') | t }}: {{ absDelta(m.leanDiff) }} kg
                 </div>
+                @if (verdictOf(m.fatDiff, m.leanDiff); as v) {
+                  <div class="bf-result verdict" [class.good]="v.tone === 'good'" [class.bad]="v.tone === 'bad'"
+                       [class.mixed]="v.tone === 'mixed'" style="margin-top: 8px;">
+                    {{ v.key | t }}
+                  </div>
+                }
               }
               <p class="bf-note">{{ 'meas.bf_note' | t }}</p>
             } @else {
@@ -910,6 +918,11 @@ export class MedidasPage implements OnInit {
 
   formAge(): number | null {
     return ageAt(this.profileForm.birthDate, this.today);
+  }
+
+  /** Conclusão sobre gordura x massa magra, a mesma usada na imagem compartilhada */
+  verdictOf(fatDiff: number, leanDiff: number) {
+    return compositionVerdict(fatDiff, leanDiff);
   }
 
   // --- Compartilhar evolução (imagem + texto) ---

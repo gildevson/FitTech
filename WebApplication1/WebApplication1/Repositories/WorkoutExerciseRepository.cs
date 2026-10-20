@@ -16,7 +16,8 @@ public class WorkoutExerciseRepository : IWorkoutExerciseRepository
             SELECT we.id, we.workout_id AS WorkoutId, we.exercise_id AS ExerciseId,
                    we.sets, we.reps, we.rest_seconds AS RestSeconds,
                    we.order_index AS OrderIndex, we.notes, we.set_weights AS SetWeightsJson,
-                   e.name AS ExerciseName, mg.name AS MuscleGroupName
+                   e.name AS ExerciseName, mg.name AS MuscleGroupName,
+                   e.image_url AS ExerciseImageUrl, e.description AS ExerciseDescription
             FROM workout_exercises we
             JOIN exercises e ON we.exercise_id = e.id
             LEFT JOIN muscle_groups mg ON e.muscle_group_id = mg.id
@@ -32,7 +33,8 @@ public class WorkoutExerciseRepository : IWorkoutExerciseRepository
             SELECT we.id, we.workout_id AS WorkoutId, we.exercise_id AS ExerciseId,
                    we.sets, we.reps, we.rest_seconds AS RestSeconds,
                    we.order_index AS OrderIndex, we.notes, we.set_weights AS SetWeightsJson,
-                   e.name AS ExerciseName, mg.name AS MuscleGroupName
+                   e.name AS ExerciseName, mg.name AS MuscleGroupName,
+                   e.image_url AS ExerciseImageUrl, e.description AS ExerciseDescription
             FROM workout_exercises we
             JOIN exercises e ON we.exercise_id = e.id
             LEFT JOIN muscle_groups mg ON e.muscle_group_id = mg.id

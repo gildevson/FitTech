@@ -25,4 +25,7 @@ public class WorkoutExercise
     // Navigation
     public string? ExerciseName { get; set; }
     public string? MuscleGroupName { get; set; }
+    // Para a pré-visualização do exercício no app (quem não conhece pelo nome)
+    public string? ExerciseImageUrl { get; set; }
+    public string? ExerciseDescription { get; set; }
 }
