@@ -251,6 +251,20 @@ function localDateStr(d: Date): string {
     button.ex-editable:active { border-color: var(--ft-accent); }
     .ex-pencil { margin-left: 6px; color: var(--ft-text-faint); font-weight: 400; }
     .ex-editing { flex-direction: column; align-items: stretch; border-color: var(--ft-accent); }
+    /* Miniatura e pré-visualização do exercício (GIF), para quem não conhece pelo nome */
+    .ex-row-main { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .ex-thumb {
+      width: 42px; height: 42px; flex-shrink: 0; padding: 0; overflow: hidden; cursor: pointer;
+      border-radius: 10px; border: 1px solid var(--ft-border);
+      background: #ffffff; /* as imagens dos exercícios têm fundo branco */
+    }
+    .ex-thumb img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .ex-preview { margin-top: 10px; }
+    .ex-preview img {
+      width: 100%; max-height: 200px; object-fit: contain; display: block;
+      border-radius: var(--ft-radius); background: #ffffff;
+    }
+    .ex-preview p { margin: 8px 0 0; font-size: 0.78rem; line-height: 1.45; color: var(--ft-text-muted); }
     .ex-edit-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
     .ex-weights-head { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; }
     .ex-weights-head > span { font-size: 0.64rem; font-weight: 700; color: var(--ft-text-faint); text-transform: uppercase; letter-spacing: 0.04em; }
@@ -529,7 +543,7 @@ function localDateStr(d: Date): string {
     }
 
     .exercise-pick-list {
-      max-height: 200px; overflow-y: auto;
+      max-height: 280px; overflow-y: auto;
       border: 1px solid var(--ft-border); border-radius: var(--ft-radius);
       background: var(--ft-bg-elevated);
     }
@@ -542,7 +556,11 @@ function localDateStr(d: Date): string {
     .exercise-pick-item.selected { background: var(--ft-accent-soft); }
     .pick-name { font-size: 0.88rem; font-weight: 600; color: var(--ft-text); }
     .pick-muscle { font-size: 0.7rem; color: var(--ft-text-faint); }
-    .pick-icon { font-size: 1.1rem; }
+    .pick-icon { font-size: 1.1rem; flex-shrink: 0; }
+    .pick-preview { padding: 0 14px 12px; border-bottom: 1px solid var(--ft-border); }
+    .pick-preview.selected { background: var(--ft-accent-soft); }
+    .pick-preview .ex-preview { margin-top: 0; }
+    .pick-preview .ex-preview img { max-height: 170px; }
     .pick-icon.on { color: var(--ft-accent); }
     .pick-icon.off { color: var(--ft-text-faint); }
 
@@ -996,11 +1014,16 @@ function localDateStr(d: Date): string {
                               } @else {
                                 @for (we of exercisesOf(workout.id); track we.id) {
                                   <div class="exercise-row">
-                                    <div>
-                                      <div class="exercise-row-name">{{ we.exerciseName }}</div>
-                                      @if (we.muscleGroupName) {
-                                        <div class="exercise-row-muscle">{{ we.muscleGroupName }}</div>
+                                    <div class="ex-row-main">
+                                      @if (we.exerciseImageUrl) {
+                                        <span class="ex-thumb"><img [src]="we.exerciseImageUrl" alt="" loading="lazy" /></span>
                                       }
+                                      <div>
+                                        <div class="exercise-row-name">{{ we.exerciseName }}</div>
+                                        @if (we.muscleGroupName) {
+                                          <div class="exercise-row-muscle">{{ we.muscleGroupName }}</div>
+                                        }
+                                      </div>
                                     </div>
                                     <div class="exercise-row-meta">
                                       {{ we.sets }}x{{ we.reps }}@if (weightSummary(we); as w) { · {{ w }} kg }<br>{{ 'workouts.rest' | t: { s: we.restSeconds } }}
@@ -1126,6 +1149,16 @@ function localDateStr(d: Date): string {
                               @if (editingExId() === we.id) {
                                 <div class="exercise-row ex-editing">
                                   <div class="exercise-row-name">{{ we.exerciseName }}</div>
+                                  @if (we.exerciseImageUrl || we.exerciseDescription) {
+                                    <div class="ex-preview">
+                                      @if (we.exerciseImageUrl) {
+                                        <img [src]="we.exerciseImageUrl" [alt]="we.exerciseName" />
+                                      }
+                                      @if (we.exerciseDescription) {
+                                        <p>{{ we.exerciseDescription }}</p>
+                                      }
+                                    </div>
+                                  }
                                   <div class="ex-edit-grid">
                                     <label><span>{{ 'create.sets' | t }}</span>
                                       <input type="number" inputmode="numeric" min="1" max="20" [ngModel]="exForm.sets" (ngModelChange)="onSetsChange($event)" /></label>
@@ -1159,11 +1192,16 @@ function localDateStr(d: Date): string {
                                 </div>
                               } @else {
                                 <button class="exercise-row ex-editable" (click)="startEditExercise(we)" [attr.aria-label]="'workouts.edit_exercise' | t: { name: we.exerciseName }">
-                                  <div>
-                                    <div class="exercise-row-name">{{ we.exerciseName }}</div>
-                                    @if (we.muscleGroupName) {
-                                      <div class="exercise-row-muscle">{{ we.muscleGroupName }}</div>
+                                  <div class="ex-row-main">
+                                    @if (we.exerciseImageUrl) {
+                                      <span class="ex-thumb"><img [src]="we.exerciseImageUrl" alt="" loading="lazy" /></span>
                                     }
+                                    <div>
+                                      <div class="exercise-row-name">{{ we.exerciseName }}</div>
+                                      @if (we.muscleGroupName) {
+                                        <div class="exercise-row-muscle">{{ we.muscleGroupName }}</div>
+                                      }
+                                    </div>
                                   </div>
                                   <div class="exercise-row-meta">
                                     {{ we.sets }}x{{ we.reps }}@if (weightSummary(we); as w) { · {{ w }} kg }<br>{{ 'workouts.rest' | t: { s: we.restSeconds } }}
@@ -1480,17 +1518,37 @@ function localDateStr(d: Date): string {
                       <div class="exercise-pick-item"
                         [class.selected]="isSelected(ex.id)"
                         (click)="toggleExercise(ex)">
-                        <div>
-                          <div class="pick-name">{{ ex.name }}</div>
-                          @if (ex.muscleGroupName) {
-                            <div class="pick-muscle">{{ ex.muscleGroupName }}</div>
+                        <div class="ex-row-main">
+                          @if (ex.imageUrl) {
+                            <!-- Tocar na miniatura só mostra o exercício, não seleciona -->
+                            <button type="button" class="ex-thumb" [attr.aria-label]="'session.how_to' | t"
+                                    [attr.aria-expanded]="previewPickId() === ex.id"
+                                    (click)="togglePickPreview(ex.id, $event)">
+                              <img [src]="ex.imageUrl" alt="" loading="lazy" />
+                            </button>
                           }
+                          <div>
+                            <div class="pick-name">{{ ex.name }}</div>
+                            @if (ex.muscleGroupName) {
+                              <div class="pick-muscle">{{ ex.muscleGroupName }}</div>
+                            }
+                          </div>
                         </div>
                         <ion-icon
                           [name]="isSelected(ex.id) ? 'checkmark-circle' : 'ellipse-outline'"
                           [class]="isSelected(ex.id) ? 'pick-icon on' : 'pick-icon off'"
                         ></ion-icon>
                       </div>
+                      @if (previewPickId() === ex.id) {
+                        <div class="pick-preview" [class.selected]="isSelected(ex.id)">
+                          <div class="ex-preview">
+                            <img [src]="ex.imageUrl" [alt]="ex.name" />
+                            @if (ex.description) {
+                              <p>{{ ex.description }}</p>
+                            }
+                          </div>
+                        </div>
+                      }
                     }
                   </div>
                 }
@@ -1739,6 +1797,14 @@ export class TreinosPage implements OnInit, OnDestroy {
 
   togglePreview(exId: string) {
     this.previewExerciseId.update(id => (id === exId ? null : exId));
+  }
+
+  // Exercício com a pré-visualização aberta na lista do "Criar Meu Treino"
+  previewPickId = signal<string | null>(null);
+
+  togglePickPreview(exId: string, event: Event) {
+    event.stopPropagation(); // não marca/desmarca o exercício
+    this.previewPickId.update(id => (id === exId ? null : exId));
   }
 
   private initSessionSets(exercises: WorkoutExercise[]) {
