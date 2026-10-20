@@ -148,6 +148,16 @@ export interface WorkoutLog {
   createdAt: string;
 }
 
+/** Treino registrado com nome, usado no calendário (GET /api/workoutlogs/me/calendar) */
+export interface CalendarWorkoutLog {
+  id: string;
+  loggedDate: string;
+  workoutName: string;
+  planName: string;
+  status: 'done' | 'skipped';
+  skipReason?: string | null;
+}
+
 export interface AssignedWorkout {
   id: string;
   workoutId: string;

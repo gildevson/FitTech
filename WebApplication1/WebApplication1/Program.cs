@@ -89,8 +89,9 @@ try
     await conn.OpenAsync();
     await conn.ExecuteAsync(SqlScripts.CreateTables);
 
-    // Admin padrão. Em desenvolvimento a senha é sempre "admin123" (resetada a cada início).
-    // Publicado: a senha vem de Admin__Password e NUNCA é resetada; sem a variável, nenhum admin é criado.
+    // Admin padrão, criado só se ainda não existir: em desenvolvimento com a senha "admin123",
+    // publicado com a senha de Admin__Password (sem a variável, nenhum admin é criado).
+    // A senha de um admin existente nunca é resetada (o banco local pode ser o mesmo da produção).
     var adminExists = await conn.ExecuteScalarAsync<bool>(
         "SELECT EXISTS(SELECT 1 FROM users WHERE email = 'admin@fittech.com')");
     var isDev = app.Environment.IsDevelopment();
@@ -103,15 +104,6 @@ try
             new { Hash = BCrypt.Net.BCrypt.HashPassword(adminPassword) });
         Console.ForegroundColor = ConsoleColor.Yellow;
         Console.WriteLine(isDev ? "Admin criado: admin@fittech.com / admin123" : "Admin criado: admin@fittech.com (senha de Admin__Password)");
-        Console.ResetColor();
-    }
-    else if (adminExists && isDev)
-    {
-        await conn.ExecuteAsync(
-            "UPDATE users SET password_hash = @Hash, is_active = true WHERE email = 'admin@fittech.com'",
-            new { Hash = BCrypt.Net.BCrypt.HashPassword(adminPassword!) });
-        Console.ForegroundColor = ConsoleColor.Yellow;
-        Console.WriteLine("Senha do admin resetada para: admin123");
         Console.ResetColor();
     }
     else if (!adminExists)

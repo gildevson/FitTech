@@ -6,6 +6,7 @@ public interface IWorkoutLogRepository
     Task<WorkoutStatsDto> GetStatsAsync();
     Task<IEnumerable<UserWorkoutStatsDto>> GetUserStatsAsync();
     Task<IEnumerable<UserWorkoutLogDto>> GetUserLogsAsync(Guid userId);
+    Task<IEnumerable<UserWorkoutLogDto>> GetByPeriodAsync(Guid userId, DateTime from, DateTime to);
     Task<bool> ReplaceSetsAsync(Guid logId, Guid userId, IEnumerable<WorkoutSetLogDto> sets);
     Task<IEnumerable<WorkoutSetLogDto>> GetLastSetsAsync(Guid userId, Guid workoutId);
 }

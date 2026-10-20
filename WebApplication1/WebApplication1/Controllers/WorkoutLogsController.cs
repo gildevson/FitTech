@@ -21,6 +21,19 @@ public class WorkoutLogsController : ControllerBase
         return Ok(logs);
     }
 
+    /// <summary>Treinos do mês (feitos e pulados) com o nome de cada um, para o calendário do app.</summary>
+    [HttpGet("me/calendar")]
+    public async Task<IActionResult> GetMyCalendar([FromQuery] int year, [FromQuery] int month)
+    {
+        if (year is < 2000 or > 2100 || month is < 1 or > 12)
+            return BadRequest(new { message = "Mês inválido." });
+
+        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var from = new DateTime(year, month, 1);
+        var logs = await _repo.GetByPeriodAsync(userId, from, from.AddMonths(1).AddDays(-1));
+        return Ok(logs);
+    }
+
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateWorkoutLogDto dto)
     {

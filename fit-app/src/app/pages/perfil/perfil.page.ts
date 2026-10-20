@@ -25,6 +25,7 @@ import { MealReminderService } from '../../core/services/meal-reminder.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ProfilePhotoService } from '../../core/services/profile-photo.service';
 import { ThemeService, Theme } from '../../core/services/theme.service';
+import { FrequencyCalendarComponent } from '../../shared/frequency-calendar/frequency-calendar.component';
 
 @Component({
   selector: 'app-perfil',
@@ -41,7 +42,8 @@ import { ThemeService, Theme } from '../../core/services/theme.service';
     IonIcon,
     IonButton,
     IonButtons,
-    IonSkeletonText
+    IonSkeletonText,
+    FrequencyCalendarComponent
   ],
   styles: [`
     .profile-hero {
@@ -340,6 +342,10 @@ import { ThemeService, Theme } from '../../core/services/theme.service';
           }
           <span class="role-badge">{{ getRoleLabel(authService.currentUser()?.role) }}</span>
         </div>
+
+        <!-- Frequência de treinos no mês -->
+        <p class="section-title">{{ 'profile.frequency' | t }}</p>
+        <app-frequency-calendar></app-frequency-calendar>
 
         <!-- Dados da conta -->
         <p class="section-title">{{ 'profile.account_info' | t }}</p>

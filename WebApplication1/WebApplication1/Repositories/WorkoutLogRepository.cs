@@ -102,6 +102,22 @@ public class WorkoutLogRepository : IWorkoutLogRepository
             new { UserId = userId });
     }
 
+    /// <summary>Treinos registrados entre duas datas (inclusive), com nome do treino e da ficha.</summary>
+    public async Task<IEnumerable<UserWorkoutLogDto>> GetByPeriodAsync(Guid userId, DateTime from, DateTime to)
+    {
+        using var conn = _db.CreateConnection();
+        return await conn.QueryAsync<UserWorkoutLogDto>(
+            @"SELECT wl.id AS Id, wl.logged_date AS LoggedDate,
+                     w.name AS WorkoutName, wp.name AS PlanName,
+                     wl.status AS Status, wl.skip_reason AS SkipReason
+              FROM workout_logs wl
+              JOIN workouts w ON w.id = wl.workout_id
+              JOIN workout_plans wp ON wp.id = w.workout_plan_id
+              WHERE wl.user_id = @UserId AND wl.logged_date BETWEEN @From AND @To
+              ORDER BY wl.logged_date, wl.created_at",
+            new { UserId = userId, From = from.Date, To = to.Date });
+    }
+
     public async Task<bool> ReplaceSetsAsync(Guid logId, Guid userId, IEnumerable<WorkoutSetLogDto> sets)
     {
         using var conn = _db.CreateConnection();

@@ -134,6 +134,17 @@ const pt: Dict = {
   'profile.role_admin': 'Administrador',
   'profile.role_student': 'Aluno',
   'profile.role_instructor': 'Instrutor',
+  'profile.frequency': 'Frequência mensal',
+
+  'freq.prev': 'Mês anterior',
+  'freq.next': 'Próximo mês',
+  'freq.trained': 'dias treinados',
+  'freq.skipped': 'dias pulados',
+  'freq.per_week': 'treinos/semana',
+  'freq.legend_done': 'Treinou',
+  'freq.legend_skipped': 'Pulou',
+  'freq.error': 'Não foi possível carregar seus treinos.',
+  'freq.no_workout': 'Nenhum treino registrado neste dia.',
 
   // Exercícios
   'exercises.title': 'Exercícios',
@@ -524,6 +535,17 @@ const en: Dict = {
   'profile.role_admin': 'Administrator',
   'profile.role_student': 'Student',
   'profile.role_instructor': 'Instructor',
+  'profile.frequency': 'Monthly frequency',
+
+  'freq.prev': 'Previous month',
+  'freq.next': 'Next month',
+  'freq.trained': 'days trained',
+  'freq.skipped': 'days skipped',
+  'freq.per_week': 'workouts/week',
+  'freq.legend_done': 'Trained',
+  'freq.legend_skipped': 'Skipped',
+  'freq.error': 'Could not load your workouts.',
+  'freq.no_workout': 'No workout logged on this day.',
 
   'exercises.title': 'Exercises',
   'exercises.count': '{n} exercise(s)',
@@ -908,6 +930,17 @@ const es: Dict = {
   'profile.role_admin': 'Administrador',
   'profile.role_student': 'Alumno',
   'profile.role_instructor': 'Instructor',
+  'profile.frequency': 'Frecuencia mensual',
+
+  'freq.prev': 'Mes anterior',
+  'freq.next': 'Mes siguiente',
+  'freq.trained': 'días entrenados',
+  'freq.skipped': 'días saltados',
+  'freq.per_week': 'entrenos/semana',
+  'freq.legend_done': 'Entrenó',
+  'freq.legend_skipped': 'Saltó',
+  'freq.error': 'No se pudieron cargar tus entrenamientos.',
+  'freq.no_workout': 'Ningún entrenamiento registrado este día.',
 
   'exercises.title': 'Ejercicios',
   'exercises.count': '{n} ejercicio(s)',
