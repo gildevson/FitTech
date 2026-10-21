@@ -514,33 +514,8 @@ function localDateStr(d: Date): string {
     .exercise-search-section { display: flex; flex-direction: column; gap: 6px; }
     .section-label { font-size: 0.78rem; font-weight: 700; color: var(--ft-text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
 
-    /* ---- Muscle group filter chips ---- */
-    .muscle-chips {
-      display: flex;
-      gap: 6px;
-      overflow-x: auto;
-      padding-bottom: 2px;
-      scrollbar-width: none;
-    }
-    .muscle-chips::-webkit-scrollbar { display: none; }
-    .muscle-chip {
-      flex-shrink: 0;
-      padding: 5px 12px;
-      border-radius: 20px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      cursor: pointer;
-      border: 1.5px solid var(--ft-border);
-      background: var(--ft-bg-elevated);
-      color: var(--ft-text-muted);
-      white-space: nowrap;
-      transition: background 0.15s, color 0.15s, border-color 0.15s;
-    }
-    .muscle-chip.active {
-      background: var(--ft-accent);
-      color: #fff;
-      border-color: var(--ft-accent);
-    }
+    /* ---- Filtro por grupo muscular ---- */
+    .muscle-select { margin: 0; }
 
     .exercise-pick-list {
       max-height: 280px; overflow-y: auto;
@@ -1494,18 +1469,15 @@ function localDateStr(d: Date): string {
                   style="--background: var(--ft-bg-elevated); --border-radius: 10px; padding: 0;"
                 ></ion-searchbar>
 
-                <!-- Muscle group filter chips -->
+                <!-- Filtro por grupo muscular -->
                 @if (muscleGroups().length > 0) {
-                  <div class="muscle-chips">
-                    <button class="muscle-chip" [class.active]="selectedMuscleGroup() === ''"
-                      (click)="selectedMuscleGroup.set('')">{{ 'common.all' | t }}</button>
+                  <select class="form-select muscle-select" [ngModel]="selectedMuscleGroup()"
+                          (ngModelChange)="selectedMuscleGroup.set($event)" [attr.aria-label]="'create.muscle_group' | t">
+                    <option value="">{{ 'create.all_groups' | t }}</option>
                     @for (mg of muscleGroups(); track mg) {
-                      <button class="muscle-chip" [class.active]="selectedMuscleGroup() === mg"
-                        (click)="selectedMuscleGroup.set(selectedMuscleGroup() === mg ? '' : mg)">
-                        {{ mg }}
-                      </button>
+                      <option [value]="mg">{{ mg }}</option>
                     }
-                  </div>
+                  </select>
                 }
 
                 @if (loadingAllExercises()) {

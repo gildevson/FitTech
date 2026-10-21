@@ -1,8 +1,11 @@
 import { Injectable, inject } from '@angular/core';
 import { I18nService } from '../i18n/i18n.service';
-import { ShareResult, WorkoutShareService, sharePalette } from './workout-share.service';
+import { ShareResult, SharePalette, WorkoutShareService, sharePalette } from './workout-share.service';
 
 export interface BeforeAfter { before: number; after: number; }
+
+/** Qual direção da variação é boa: músculos crescendo ('up'), cintura/quadril diminuindo ('down') */
+export type Better = 'up' | 'down' | 'none';
 
 export interface ProgressRow {
   label: string;          // já traduzido
@@ -10,6 +13,7 @@ export interface ProgressRow {
   after: number;
   diff: number;
   unit: string;
+  better?: Better;        // padrão: 'up'
 }
 
 export interface ProgressShareData {
@@ -46,10 +50,13 @@ export function compositionVerdict(fatDiff: number, leanDiff: number): { key: st
 }
 
 const W = 1080;
-const H = 1920; // 9:16 — formato de story (Instagram e status do WhatsApp)
-const COMP_H = 700; // altura do bloco de composição corporal
+const H = 1920;   // 9:16 — formato de story (Instagram e status do WhatsApp)
+const X = 72;     // margem lateral
+const CW = W - X * 2;
+const FOOTER_Y = 1800;
 const LEAN_COLOR = '#38bdf8';
 const FAT_COLOR = '#f5a524';
+const MIXED_COLOR = '#f5a524';
 
 /** Peso dividido em massa magra e gordura, antes e depois */
 interface Composition {
@@ -61,12 +68,14 @@ interface Composition {
   verdict: { key: string; tone: VerdictTone };
 }
 
-interface Hero { kind: 'lean' | 'weight'; label: string; value: number; unit: string; sub: string; }
-interface Card { label: string; sub: string; diff: number; unit: string; }
+/** Um indicador do topo: valor atual grande, valor anterior pequeno e a variação */
+interface Kpi { label: string; before: number; after: number; unit: string; better: Better; }
+
+type Font = (size: number, weight?: number) => string;
 
 /**
- * Imagem da evolução pensada para story: um número grande em destaque e no máximo 3 cartões.
- * O texto que acompanha também é curto; a lista completa fica no app.
+ * Imagem da evolução no formato de relatório: indicadores, composição corporal e tabela de medidas.
+ * Sem emojis no desenho (cada celular mostra de um jeito); o texto que acompanha continua curto.
  */
 @Injectable({ providedIn: 'root' })
 export class ProgressShareService {
@@ -79,6 +88,22 @@ export class ProgressShareService {
     return this.sharer.shareImage(blob, this.buildText(data), this.i18n.t('share.progress_title'), 'evolucao-fitmob', onReady);
   }
 
+  buildText(d: ProgressShareData): string {
+    const t = (k: string, p?: Record<string, string | number | null | undefined>) => this.i18n.t(k, p);
+    const sign = (n: number) => this.signed(n);
+    const comp = this.composition(d);
+    const lines = [`${t('share.report_title')} · ${t('share.progress_days', { n: d.days })}`];
+    if (d.weight) lines.push(`${t('meas.weight')}: ${this.num(d.weight.before)} → ${this.num(d.weight.after)} kg (${sign(this.diff(d.weight))})`);
+    if (comp) {
+      lines.push(`${t('meas.fat_mass')} ${sign(comp.fatDiff)} kg · ${t('meas.lean_mass')} ${sign(comp.leanDiff)} kg`);
+      lines.push(t(comp.verdict.key));
+    }
+    const rows = this.tableRows(d, 3);
+    if (rows.length) lines.push(rows.map(r => `${r.label} ${sign(r.diff)} ${r.unit}`).join(' · '));
+    lines.push('', t('share.footer_progress'));
+    return lines.join('\n');
+  }
+
   /** Só existe quando dá para separar o peso em gordura e massa magra (precisa de sexo, altura e medidas) */
   private composition(d: ProgressShareData): Composition | null {
     if (!d.lean || !d.fatMass) return null;
@@ -87,70 +112,24 @@ export class ProgressShareService {
     return { weight, lean: d.lean, fat: d.fatMass, leanDiff, fatDiff, verdict: compositionVerdict(fatDiff, leanDiff) };
   }
 
-  /** Destaque principal: massa magra (se ganhou) ou, senão, o peso */
-  private hero(d: ProgressShareData): Hero | null {
+  /** Indicadores do topo, na ordem: peso, % gordura, massa magra, massa gorda (ou IMC sem composição) */
+  private kpis(d: ProgressShareData): Kpi[] {
     const t = (k: string) => this.i18n.t(k);
-    if (d.lean && this.diff(d.lean) > 0) {
-      const fat = d.fatMass ? this.diff(d.fatMass) : 0;
-      return {
-        kind: 'lean', label: `💪 ${t('meas.lean_mass')}`, value: this.diff(d.lean), unit: 'kg',
-        sub: fat < 0 ? this.massPhrase('fat', fat) : `${this.num(d.lean.before)} → ${this.num(d.lean.after)} kg`
-      };
-    }
-    if (d.weight) {
-      return {
-        kind: 'weight', label: `⚖️ ${t('meas.weight')}`, value: this.diff(d.weight), unit: 'kg',
-        sub: `${this.num(d.weight.before)} kg → ${this.num(d.weight.after)} kg`
-      };
-    }
-    return null;
+    const out: Kpi[] = [];
+    if (d.weight) out.push({ label: t('meas.weight'), ...d.weight, unit: 'kg', better: 'none' });
+    if (d.bf) out.push({ label: t('meas.bf'), ...d.bf, unit: '%', better: 'down' });
+    if (d.lean) out.push({ label: t('meas.lean_mass'), ...d.lean, unit: 'kg', better: 'up' });
+    if (d.fatMass) out.push({ label: t('meas.fat_mass'), ...d.fatMass, unit: 'kg', better: 'down' });
+    if (out.length < 4 && d.bmi) out.push({ label: t('meas.bmi'), before: d.bmi.before, after: d.bmi.after, unit: '', better: 'none' });
+    return out.slice(0, 4);
   }
 
-  /** Até 3 cartões: maiores ganhos de músculo; se faltar, as medidas que mais mudaram */
-  private cards(d: ProgressShareData, hero: Hero | null): Card[] {
-    const out: Card[] = [];
-    // Se o destaque foi a massa magra, o peso vira o primeiro cartão
-    if (hero?.kind === 'lean' && d.weight) {
-      out.push({ label: this.i18n.t('meas.weight'), sub: `${this.num(d.weight.before)} → ${this.num(d.weight.after)} kg`, diff: this.diff(d.weight), unit: 'kg' });
-    }
-    const toCard = (r: ProgressRow): Card => ({ label: r.label, sub: `${this.num(r.before)} → ${this.num(r.after)} ${r.unit}`, diff: r.diff, unit: r.unit });
-    const gains = d.muscles.filter(r => r.diff > 0).sort((a, b) => b.diff - a.diff);
-    const rest = [...d.muscles.filter(r => r.diff < 0), ...d.others.filter(r => r.diff !== 0)]
-      .sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff));
-    for (const r of [...gains, ...rest]) {
-      if (out.length >= 3) break;
-      out.push(toCard(r));
-    }
-    return out;
-  }
-
-  buildText(d: ProgressShareData): string {
-    const t = (k: string, p?: Record<string, string | number | null | undefined>) => this.i18n.t(k, p);
-    const sign = (n: number) => (n > 0 ? '+' : n < 0 ? '−' : '') + this.num(Math.abs(n));
-    const comp = this.composition(d);
-    const hero = comp ? null : this.hero(d);
-    const lines = [`📈 ${t('share.progress_title')} · ${t('share.progress_days', { n: d.days })}`];
-    if (comp) {
-      lines.push(`⚖️ ${t('meas.weight')}: ${sign(this.diff(comp.weight))} kg`);
-      lines.push(`${t('meas.fat_mass')} ${sign(comp.fatDiff)} kg · ${t('meas.lean_mass')} ${sign(comp.leanDiff)} kg`);
-      lines.push(t(comp.verdict.key));
-    }
-    if (hero) lines.push(`${hero.label}: ${sign(hero.value)} ${hero.unit}`);
-    const cards = this.cards(d, hero).slice(0, comp ? 2 : 3);
-    if (cards.length) lines.push(cards.map(c => `${c.label} ${sign(c.diff)} ${c.unit}`).join(' · '));
-    lines.push('', t('share.footer_progress'));
-    return lines.join('\n');
-  }
-
-  /** "Ganhou 2,1 kg de massa magra" / "Perdeu 3,4 kg de gordura" */
-  private massPhrase(kind: 'lean' | 'fat', diff: number): string {
-    const kg = this.num(Math.abs(diff));
-    const key = diff >= 0 ? `share.${kind}_gained` : `share.${kind}_lost`;
-    return this.i18n.t(key, { kg });
-  }
-
-  private diff(v: BeforeAfter): number {
-    return Math.round((v.after - v.before) * 10) / 10;
+  /** Medidas que mudaram, das maiores variações para as menores */
+  private tableRows(d: ProgressShareData, max: number): ProgressRow[] {
+    return [...d.muscles, ...d.others]
+      .filter(r => r.diff !== 0)
+      .sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff))
+      .slice(0, max);
   }
 
   // ---------- Imagem ----------
@@ -160,267 +139,287 @@ export class ProgressShareService {
     canvas.width = W;
     canvas.height = H;
     const ctx = canvas.getContext('2d')!;
-    const font = (size: number, weight = 700) => `${weight} ${size}px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
+    const font: Font = (size, weight = 700) => `${weight} ${size}px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
     const p = sharePalette();
-    const accent = p.accent;
-    const { good: GOOD, bad: BAD, muted: MUTED, soft: SOFT } = p;
-    const t = (k: string, p?: Record<string, string | number | null | undefined>) => this.i18n.t(k, p);
-    const signed = (n: number) => (n > 0 ? '+' : n < 0 ? '−' : '') + this.num(Math.abs(n));
-    const color = (n: number) => (n > 0 ? GOOD : n < 0 ? BAD : MUTED);
+    const t = (k: string, params?: Record<string, string | number | null | undefined>) => this.i18n.t(k, params);
 
-    // Fundo: degradê escuro com brilho vermelho em cima e verde suave embaixo
-    const bg = ctx.createLinearGradient(0, 0, 0, H);
-    bg.addColorStop(0, p.bgTop);
-    bg.addColorStop(1, p.bgBottom);
-    ctx.fillStyle = bg;
+    // Fundo liso com uma faixa de destaque fina no topo
+    ctx.fillStyle = p.bgBottom;
     ctx.fillRect(0, 0, W, H);
-    const glowTop = ctx.createRadialGradient(W / 2, -100, 40, W / 2, -100, 900);
-    glowTop.addColorStop(0, `rgba(${p.accentRgb},${p.light ? 0.22 : 0.40})`);
-    glowTop.addColorStop(1, `rgba(${p.accentRgb},0)`);
-    ctx.fillStyle = glowTop;
-    ctx.fillRect(0, 0, W, H);
-    const glowBottom = ctx.createRadialGradient(W / 2, H + 200, 40, W / 2, H + 200, 900);
-    glowBottom.addColorStop(0, this.alpha(GOOD, p.light ? 0.10 : 0.16));
-    glowBottom.addColorStop(1, this.alpha(GOOD, 0));
-    ctx.fillStyle = glowBottom;
-    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = p.accent;
+    ctx.fillRect(0, 0, W, 10);
 
-    // Marca e dias
+    // Cabeçalho: marca + tipo do documento, período e duração
     ctx.textAlign = 'left';
     ctx.fillStyle = p.text;
-    ctx.font = font(52, 800);
-    ctx.fillText('Fit', 90, 150);
+    ctx.font = font(44, 800);
+    ctx.fillText('Fit', X, 120);
     const fitW = ctx.measureText('Fit').width;
-    ctx.fillStyle = accent;
-    ctx.fillText('Mob', 90 + fitW, 150);
+    ctx.fillStyle = p.accent;
+    ctx.fillText('Mob', X + fitW, 120);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = p.muted;
+    ctx.font = font(26, 700);
+    this.spaced(ctx, t('share.report_title').toUpperCase(), W - X, 116, 3);
 
-    const days = t('share.progress_days', { n: d.days });
-    ctx.font = font(34, 800);
-    const pillW = ctx.measureText(days).width + 56;
-    this.sharer.roundRect(ctx, W - 90 - pillW, 100, pillW, 66, 33);
-    ctx.fillStyle = `rgba(${p.accentRgb},0.16)`;
-    ctx.fill();
-    ctx.textAlign = 'center';
-    ctx.fillStyle = p.accentText;
-    ctx.fillText(days, W - 90 - pillW / 2, 146);
-
-    // Título
+    ctx.textAlign = 'left';
     ctx.fillStyle = p.text;
-    ctx.font = font(84, 900);
-    ctx.fillText(t('share.progress_title'), W / 2, 340);
-    ctx.fillStyle = MUTED;
-    ctx.font = font(34, 600);
-    ctx.fillText(`${this.date(d.from)}  →  ${this.date(d.to)}`, W / 2, 405);
+    const period = `${this.date(d.from)} – ${this.date(d.to)}`;
+    let size = 56;
+    ctx.font = font(size, 800);
+    while (size > 36 && ctx.measureText(period).width > CW) ctx.font = font(--size, 800);
+    ctx.fillText(period, X, 236);
+    ctx.fillStyle = p.muted;
+    ctx.font = font(30, 600);
+    ctx.fillText(t('share.report_days', { n: d.days }), X, 286);
+    this.divider(ctx, p, 330);
 
-    // Com gordura/massa magra o destaque é a composição corporal; senão, um número gigante
+    // Indicadores em grade 2x2
+    let y = 370;
+    const kpis = this.kpis(d);
+    const tileW = (CW - 24) / 2, tileH = 196;
+    kpis.forEach((k, i) => this.drawKpi(ctx, p, font, k, X + (i % 2) * (tileW + 24), y + Math.floor(i / 2) * (tileH + 24), tileW, tileH));
+    if (kpis.length) y += Math.ceil(kpis.length / 2) * (tileH + 24) + 26;
+
+    // Composição corporal
     const comp = this.composition(d);
-    const hero = comp ? null : this.hero(d);
-    const cards = this.cards(d, hero).slice(0, comp ? 2 : 3);
-    // Centraliza o bloco (destaque + cartões) no espaço entre o título e o rodapé
-    const blockH = (comp ? COMP_H + 70 : 0) + (hero ? 470 + 90 : 0) + (cards.length ? 36 + cards.length * 194 : 0);
-    let y = 480 + Math.max(0, (H - 200 - 480 - blockH) / 2);
-    if (comp) {
-      this.drawComposition(ctx, comp, y, font);
-      y += COMP_H + 70;
-    }
-    if (hero) {
-      const c = color(hero.value);
-      const h = 470;
-      this.sharer.roundRect(ctx, 90, y, W - 180, h, 48);
-      const heroBg = ctx.createLinearGradient(0, y, 0, y + h);
-      heroBg.addColorStop(0, this.alpha(c, 0.20));
-      heroBg.addColorStop(1, this.alpha(c, 0.05));
-      ctx.fillStyle = heroBg;
-      ctx.fill();
-      ctx.strokeStyle = this.alpha(c, 0.45);
-      ctx.lineWidth = 3;
-      ctx.stroke();
+    if (comp) y = this.drawComposition(ctx, p, font, comp, y);
 
-      ctx.textAlign = 'center';
-      ctx.fillStyle = SOFT;
-      ctx.font = font(42, 800);
-      ctx.fillText(hero.label.toUpperCase(), W / 2, y + 100);
-
-      // Número enorme + unidade menor, centralizados juntos
-      const big = signed(hero.value);
-      ctx.font = font(220, 900);
-      const bigW = ctx.measureText(big).width;
-      ctx.font = font(90, 900);
-      const unitW = ctx.measureText(` ${hero.unit}`).width;
-      const startX = W / 2 - (bigW + unitW) / 2;
-      ctx.textAlign = 'left';
-      ctx.fillStyle = c;
-      ctx.font = font(220, 900);
-      ctx.fillText(big, startX, y + 320);
-      ctx.font = font(90, 900);
-      ctx.fillText(` ${hero.unit}`, startX + bigW, y + 320);
-
-      ctx.textAlign = 'center';
-      ctx.fillStyle = SOFT;
-      ctx.font = font(40, 600);
-      ctx.fillText(this.sharer.ellipsis(ctx, hero.sub, W - 260), W / 2, y + 405);
-      y += h + 90;
-    }
-
-    // Até 3 cartões grandes
-    if (cards.length) {
-      const allGains = cards.every(c => c.diff > 0);
-      ctx.textAlign = 'left';
-      ctx.fillStyle = MUTED;
-      ctx.font = font(34, 800);
-      ctx.fillText(`${allGains ? '🏆' : '✨'}  ${t(allGains ? 'share.top_gains' : 'share.highlights').toUpperCase()}`, 96, y);
-      y += 36;
-      for (const c of cards) {
-        const h = 170;
-        this.sharer.roundRect(ctx, 90, y, W - 180, h, 36);
-        ctx.fillStyle = p.box;
-        ctx.fill();
-        ctx.strokeStyle = p.boxBorder;
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        // Faixa colorida à esquerda
-        this.sharer.roundRect(ctx, 90, y + 30, 10, h - 60, 5);
-        ctx.fillStyle = color(c.diff);
-        ctx.fill();
-
-        ctx.textAlign = 'left';
-        ctx.fillStyle = p.text;
-        ctx.font = font(48, 800);
-        ctx.fillText(this.sharer.ellipsis(ctx, c.label, 520), 140, y + 78);
-        ctx.fillStyle = MUTED;
-        ctx.font = font(32, 600);
-        ctx.fillText(c.sub, 140, y + 128);
-
-        ctx.textAlign = 'right';
-        ctx.fillStyle = color(c.diff);
-        ctx.font = font(40, 800);
-        const unitW = ctx.measureText(` ${c.unit}`).width;
-        ctx.fillText(` ${c.unit}`, W - 130, y + 108);
-        ctx.font = font(80, 900);
-        ctx.fillText(signed(c.diff), W - 130 - unitW, y + 108);
-        y += h + 24;
-      }
-    }
+    // Tabela de medidas com o espaço que sobrou
+    const rowH = 66;
+    const free = FOOTER_Y - 40 - y - 120;
+    const rows = this.tableRows(d, Math.max(0, Math.floor(free / rowH)));
+    if (rows.length) this.drawTable(ctx, p, font, rows, y, rowH);
 
     // Rodapé
-    ctx.textAlign = 'center';
+    this.divider(ctx, p, FOOTER_Y);
+    ctx.textAlign = 'left';
     ctx.fillStyle = p.faint;
-    ctx.font = font(34, 700);
-    ctx.fillText(t('share.footer_progress'), W / 2, H - 110);
+    ctx.font = font(24, 600);
+    ctx.fillText(comp || d.bf ? t('share.navy_note') : t('share.footer_report'), X, FOOTER_Y + 56);
+    ctx.textAlign = 'right';
+    ctx.font = font(26, 800);
+    ctx.fillText('FitMob', W - X, FOOTER_Y + 56);
 
     return await new Promise<Blob>((resolve, reject) =>
       canvas.toBlob(b => (b ? resolve(b) : reject(new Error('canvas'))), 'image/png'));
   }
 
-  /** Variação do peso + barras Antes/Depois divididas em massa magra e gordura + conclusão */
-  private drawComposition(ctx: CanvasRenderingContext2D, c: Composition, y: number, font: (size: number, weight?: number) => string) {
-    const p = sharePalette();
-    const t = (k: string) => this.i18n.t(k);
-    const signed = (n: number) => (n > 0 ? '+' : n < 0 ? '−' : '') + this.num(Math.abs(n));
-    const eps = 0.3;
-    // Gordura caindo e massa magra subindo são boas notícias
-    const fatColor = c.fatDiff < -eps ? p.good : c.fatDiff > eps ? p.bad : p.muted;
-    const leanColor = c.leanDiff > eps ? p.good : c.leanDiff < -eps ? p.bad : p.muted;
-    const toneColor = { good: p.good, mixed: FAT_COLOR, bad: p.bad, neutral: p.muted }[c.verdict.tone];
+  private drawKpi(ctx: CanvasRenderingContext2D, p: SharePalette, font: Font, k: Kpi, x: number, y: number, w: number, h: number) {
+    this.panel(ctx, p, x, y, w, h, 24);
+    const diff = Math.round((k.after - k.before) * 10) / 10;
+    const unit = k.unit ? (k.unit === '%' ? '%' : ` ${k.unit}`) : '';
 
-    this.sharer.roundRect(ctx, 90, y, W - 180, COMP_H, 48);
-    ctx.fillStyle = p.box;
+    ctx.textAlign = 'left';
+    ctx.fillStyle = p.muted;
+    ctx.font = font(24, 700);
+    this.spaced(ctx, this.sharer.ellipsis(ctx, k.label.toUpperCase(), w - 200), x + 32, y + 56, 1.5);
+
+    // Variação num selo no canto
+    const tag = `${this.signed(diff)}${unit}`;
+    ctx.font = font(26, 800);
+    const tagW = ctx.measureText(tag).width + 28;
+    const c = this.tone(p, diff, k.better);
+    this.sharer.roundRect(ctx, x + w - 28 - tagW, y + 26, tagW, 44, 22);
+    ctx.fillStyle = this.alpha(c, 0.14);
     ctx.fill();
-    ctx.strokeStyle = p.boxBorder;
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
     ctx.textAlign = 'center';
-    ctx.fillStyle = p.soft;
-    ctx.font = font(40, 800);
-    ctx.fillText(`⚖️ ${t('share.composition').toUpperCase()}`, W / 2, y + 80);
+    ctx.fillStyle = c;
+    ctx.fillText(tag, x + w - 28 - tagW / 2, y + 57);
 
-    // Variação do peso, número grande + "kg" menor, centralizados juntos
-    const big = signed(this.diff(c.weight));
-    ctx.font = font(130, 900);
-    const bigW = ctx.measureText(big).width;
-    ctx.font = font(60, 900);
-    const unitW = ctx.measureText(' kg').width;
-    const startX = W / 2 - (bigW + unitW) / 2;
+    // Valor atual grande + unidade
     ctx.textAlign = 'left';
     ctx.fillStyle = p.text;
-    ctx.font = font(130, 900);
-    ctx.fillText(big, startX, y + 210);
-    ctx.font = font(60, 900);
-    ctx.fillText(' kg', startX + bigW, y + 210);
-    ctx.textAlign = 'center';
+    ctx.font = font(68, 800);
+    const value = this.num(k.after);
+    ctx.fillText(value, x + 32, y + 136);
+    const vW = ctx.measureText(value).width;
     ctx.fillStyle = p.muted;
-    ctx.font = font(34, 600);
-    ctx.fillText(`${this.num(c.weight.before)} kg → ${this.num(c.weight.after)} kg`, W / 2, y + 262);
+    ctx.font = font(30, 700);
+    ctx.fillText(unit, x + 32 + vW, y + 136);
 
-    // Barras: mesma escala para Antes e Depois, para a diferença de tamanho aparecer
-    const barX = 140, barW = W - 280, barH = 64;
+    ctx.fillStyle = p.faint;
+    ctx.font = font(24, 600);
+    ctx.fillText(`${this.i18n.t('meas.before')}: ${this.num(k.before)}${unit}`, x + 32, y + 174);
+  }
+
+  /** Barras Antes/Depois divididas em massa magra e gordura + conclusão; devolve o y seguinte */
+  private drawComposition(ctx: CanvasRenderingContext2D, p: SharePalette, font: Font, c: Composition, y: number): number {
+    const t = (k: string) => this.i18n.t(k);
+    const h = 400;
+    this.panel(ctx, p, X, y, CW, h, 24);
+
+    ctx.textAlign = 'left';
+    ctx.fillStyle = p.muted;
+    ctx.font = font(24, 700);
+    this.spaced(ctx, t('share.composition').toUpperCase(), X + 32, y + 56, 1.5);
+
+    // Legenda à direita do título
+    ctx.font = font(24, 700);
+    const legend = [{ label: t('meas.fat_mass'), color: FAT_COLOR }, { label: t('meas.lean_mass'), color: LEAN_COLOR }];
+    let lx = X + CW - 32;
+    ctx.textAlign = 'right';
+    for (const l of legend) {
+      ctx.fillStyle = p.soft;
+      ctx.fillText(l.label, lx, y + 56);
+      lx -= ctx.measureText(l.label).width + 12;
+      this.sharer.roundRect(ctx, lx - 20, y + 37, 20, 20, 5);
+      ctx.fillStyle = l.color;
+      ctx.fill();
+      lx -= 44;
+    }
+
+    // Barras na mesma escala, para a diferença de tamanho aparecer
+    const labelW = 130, barX = X + 32 + labelW, barW = CW - 64 - labelW - 150, barH = 52;
     const max = Math.max(c.lean.before + c.fat.before, c.lean.after + c.fat.after, 1);
     const rows = [
       { label: t('meas.before'), lean: c.lean.before, fat: c.fat.before },
       { label: t('meas.after'), lean: c.lean.after, fat: c.fat.after }
     ];
     rows.forEach((r, i) => {
-      const labelY = y + 330 + i * 120;
-      ctx.textAlign = 'left';
-      ctx.fillStyle = p.muted;
-      ctx.font = font(30, 700);
-      ctx.fillText(r.label, barX, labelY);
-      ctx.textAlign = 'right';
-      ctx.fillText(`${this.num(r.lean + r.fat)} kg`, barX + barW, labelY);
-
-      const barY = labelY + 16;
-      const leanW = (r.lean / max) * barW, fatW = (r.fat / max) * barW;
-      ctx.save();
-      this.sharer.roundRect(ctx, barX, barY, leanW + fatW, barH, 20);
-      ctx.clip();
-      ctx.fillStyle = LEAN_COLOR;
-      ctx.fillRect(barX, barY, leanW, barH);
-      ctx.fillStyle = FAT_COLOR;
-      ctx.fillRect(barX + leanW, barY, fatW, barH);
-      ctx.restore();
-
-      // Valor dentro de cada parte, se couber
-      ctx.textAlign = 'center';
-      ctx.fillStyle = '#0b1020';
-      ctx.font = font(28, 800);
-      if (leanW > 150) ctx.fillText(`${this.num(r.lean)} kg`, barX + leanW / 2, barY + 43);
-      if (fatW > 150) ctx.fillText(`${this.num(r.fat)} kg`, barX + leanW + fatW / 2, barY + 43);
-    });
-
-    // Legenda com a variação de cada parte
-    const legend = [
-      { x: barX, color: LEAN_COLOR, label: t('meas.lean_mass'), diff: c.leanDiff, diffColor: leanColor },
-      { x: W / 2 + 20, color: FAT_COLOR, label: t('meas.fat_mass'), diff: c.fatDiff, diffColor: fatColor }
-    ];
-    for (const l of legend) {
-      const ly = y + 590;
-      this.sharer.roundRect(ctx, l.x, ly - 26, 28, 28, 7);
-      ctx.fillStyle = l.color;
-      ctx.fill();
+      const by = y + 100 + i * 84;
       ctx.textAlign = 'left';
       ctx.fillStyle = p.soft;
-      ctx.font = font(30, 700);
-      const label = this.sharer.ellipsis(ctx, l.label, 210);
-      ctx.fillText(label, l.x + 42, ly);
-      const labelW = ctx.measureText(label).width;
-      ctx.fillStyle = l.diffColor;
-      ctx.font = font(34, 900);
-      ctx.fillText(`${signed(l.diff)} kg`, l.x + 42 + labelW + 14, ly);
+      ctx.font = font(28, 700);
+      ctx.fillText(r.label, X + 32, by + 36);
+
+      const leanW = (r.lean / max) * barW, fatW = (r.fat / max) * barW;
+      ctx.save();
+      this.sharer.roundRect(ctx, barX, by, leanW + fatW, barH, 12);
+      ctx.clip();
+      ctx.fillStyle = LEAN_COLOR;
+      ctx.fillRect(barX, by, leanW, barH);
+      ctx.fillStyle = FAT_COLOR;
+      ctx.fillRect(barX + leanW, by, fatW, barH);
+      ctx.restore();
+
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#0b1020';
+      ctx.font = font(24, 800);
+      if (leanW > 130) ctx.fillText(`${this.num(r.lean)} kg`, barX + leanW / 2, by + 35);
+      if (fatW > 110) ctx.fillText(`${this.num(r.fat)} kg`, barX + leanW + fatW / 2, by + 35);
+
+      ctx.textAlign = 'right';
+      ctx.fillStyle = p.text;
+      ctx.font = font(30, 800);
+      ctx.fillText(`${this.num(r.lean + r.fat)} kg`, X + CW - 32, by + 37);
+    });
+
+    // Variações e conclusão
+    const dy = y + 300;
+    ctx.textAlign = 'left';
+    ctx.font = font(26, 700);
+    let dx = X + 32;
+    for (const part of [
+      { label: t('meas.lean_mass'), diff: c.leanDiff, better: 'up' as Better },
+      { label: t('meas.fat_mass'), diff: c.fatDiff, better: 'down' as Better }
+    ]) {
+      ctx.fillStyle = p.muted;
+      ctx.font = font(26, 600);
+      ctx.fillText(part.label, dx, dy);
+      dx += ctx.measureText(part.label).width + 12;
+      ctx.fillStyle = this.tone(p, part.diff, part.better);
+      ctx.font = font(26, 800);
+      const v = `${this.signed(part.diff)} kg`;
+      ctx.fillText(v, dx, dy);
+      dx += ctx.measureText(v).width + 40;
     }
 
-    // Conclusão: diminui a fonte até caber numa linha (só corta como último recurso)
-    const verdict = t(c.verdict.key);
-    let size = 38;
+    const toneColor = { good: p.good, mixed: MIXED_COLOR, bad: p.bad, neutral: p.muted }[c.verdict.tone];
+    const verdict = t(c.verdict.key).replace(/\s*\p{Extended_Pictographic}️?/gu, '').trim();
+    let size = 30;
     ctx.font = font(size, 800);
-    while (size > 28 && ctx.measureText(verdict).width > W - 240) ctx.font = font(--size, 800);
-    ctx.textAlign = 'center';
+    while (size > 22 && ctx.measureText(verdict).width > CW - 104) ctx.font = font(--size, 800);
+    const vy = y + 326;
+    this.sharer.roundRect(ctx, X + 32, vy, CW - 64, 50, 12);
+    ctx.fillStyle = this.alpha(toneColor, 0.12);
+    ctx.fill();
+    ctx.textAlign = 'left';
     ctx.fillStyle = toneColor;
-    ctx.fillText(this.sharer.ellipsis(ctx, verdict, W - 240), W / 2, y + 660);
+    ctx.fillText(this.sharer.ellipsis(ctx, verdict, CW - 104), X + 52, vy + 35);
+
+    return y + h + 26;
   }
 
-  private alpha(hex: string, a: number): string {
-    const n = parseInt(hex.slice(1), 16);
+  private drawTable(ctx: CanvasRenderingContext2D, p: SharePalette, font: Font, rows: ProgressRow[], y: number, rowH: number) {
+    const t = (k: string) => this.i18n.t(k);
+    const h = 80 + rows.length * rowH + 16;
+    this.panel(ctx, p, X, y, CW, h, 24);
+    const colBefore = X + CW - 400, colAfter = X + CW - 230, colDiff = X + CW - 32;
+
+    ctx.fillStyle = p.muted;
+    ctx.font = font(24, 700);
+    ctx.textAlign = 'left';
+    this.spaced(ctx, t('share.measures').toUpperCase(), X + 32, y + 56, 1.5);
+    ctx.textAlign = 'right';
+    ctx.font = font(22, 700);
+    ctx.fillText(t('meas.before'), colBefore, y + 56);
+    ctx.fillText(t('meas.after'), colAfter, y + 56);
+    ctx.fillText(t('share.col_change'), colDiff, y + 56);
+
+    rows.forEach((r, i) => {
+      const ry = y + 80 + i * rowH;
+      ctx.fillStyle = p.boxBorder;
+      ctx.fillRect(X + 32, ry, CW - 64, 2);
+      const base = ry + rowH / 2 + 11;
+      ctx.textAlign = 'left';
+      ctx.fillStyle = p.text;
+      ctx.font = font(30, 700);
+      ctx.fillText(this.sharer.ellipsis(ctx, r.label, colBefore - X - 32 - 170), X + 32, base);
+      ctx.textAlign = 'right';
+      ctx.fillStyle = p.muted;
+      ctx.font = font(28, 600);
+      ctx.fillText(this.num(r.before), colBefore, base);
+      ctx.fillStyle = p.text;
+      ctx.fillText(this.num(r.after), colAfter, base);
+      ctx.fillStyle = this.tone(p, r.diff, r.better ?? 'up');
+      ctx.font = font(30, 800);
+      ctx.fillText(`${this.signed(r.diff)} ${r.unit}`, colDiff, base);
+    });
+  }
+
+  // ---------- Auxiliares ----------
+
+  /** Cor da variação: verde se foi na direção boa, vermelho se na ruim, neutra se não há direção */
+  private tone(p: SharePalette, diff: number, better: Better): string {
+    if (diff === 0 || better === 'none') return p.soft;
+    return (diff > 0) === (better === 'up') ? p.good : p.bad;
+  }
+
+  private panel(ctx: CanvasRenderingContext2D, p: SharePalette, x: number, y: number, w: number, h: number, r: number) {
+    this.sharer.roundRect(ctx, x, y, w, h, r);
+    ctx.fillStyle = p.box;
+    ctx.fill();
+    ctx.strokeStyle = p.boxBorder;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  private divider(ctx: CanvasRenderingContext2D, p: SharePalette, y: number) {
+    ctx.fillStyle = p.boxBorder;
+    ctx.fillRect(X, y, CW, 2);
+  }
+
+  /** Texto com espaçamento entre letras (títulos em caixa alta) */
+  private spaced(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, spacing: number) {
+    const c = ctx as CanvasRenderingContext2D & { letterSpacing?: string };
+    const prev = c.letterSpacing;
+    if ('letterSpacing' in c) c.letterSpacing = `${spacing}px`;
+    ctx.fillText(text, x, y);
+    if ('letterSpacing' in c) c.letterSpacing = prev ?? '0px';
+  }
+
+  private signed(n: number): string {
+    return (n > 0 ? '+' : n < 0 ? '−' : '') + this.num(Math.abs(n));
+  }
+
+  private diff(v: BeforeAfter): number {
+    return Math.round((v.after - v.before) * 10) / 10;
+  }
+
+  private alpha(color: string, a: number): string {
+    if (!color.startsWith('#')) return color;
+    const n = parseInt(color.slice(1), 16);
     return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
   }
 
@@ -428,8 +427,12 @@ export class ProgressShareService {
     return new Intl.NumberFormat(this.i18n.locale(), { maximumFractionDigits: 1 }).format(n);
   }
 
+  /** "20 jul 2026" (sem o "de" e o ponto que o português põe) */
   private date(iso: string): string {
     const [y, m, d] = iso.slice(0, 10).split('-').map(Number);
-    return new Date(y, m - 1, d).toLocaleDateString(this.i18n.locale(), { day: '2-digit', month: 'short', year: 'numeric' });
+    const parts = new Intl.DateTimeFormat(this.i18n.locale(), { day: '2-digit', month: 'short', year: 'numeric' })
+      .formatToParts(new Date(y, m - 1, d));
+    const get = (type: string) => parts.find(p => p.type === type)?.value.replace('.', '') ?? '';
+    return `${get('day')} ${get('month')} ${get('year')}`;
   }
 }

@@ -247,6 +247,20 @@ interface Entry { item: BodyMeasurement; rows: Row[]; bf: number | null; bmi: nu
     .bf-result.bad { color: var(--ft-accent); }
     .bf-result.mixed { color: #f5a524; }
     .bf-result.verdict { border-style: dashed; }
+
+    /* Tipo do peso perdido/ganho: quanto foi gordura e quanto foi massa magra */
+    .wb { margin-bottom: 14px; padding: 14px; border-radius: var(--ft-radius); background: var(--ft-bg-elevated); border: 1px solid var(--ft-border); }
+    .wb-title { margin: 0 0 10px; font-size: 0.95rem; font-weight: 800; color: var(--ft-text); }
+    .wb-bar { display: flex; height: 18px; border-radius: 9px; overflow: hidden; background: var(--ft-border); }
+    .wb-bar span { display: block; height: 100%; transition: width 0.3s; }
+    .wb-bar .fat, .wb-dot.fat { background: #f5a524; }
+    .wb-bar .lean, .wb-dot.lean { background: #38bdf8; }
+    .wb-legend { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+    .wb-item { display: flex; align-items: flex-start; gap: 8px; }
+    .wb-dot { width: 12px; height: 12px; border-radius: 4px; margin-top: 3px; flex-shrink: 0; }
+    .wb-item strong { display: block; font-size: 1.05rem; color: var(--ft-text); }
+    .wb-item small { font-size: 0.72rem; color: var(--ft-text-muted); }
+    .wb-note { margin: 10px 0 0; font-size: 0.78rem; font-weight: 600; color: var(--ft-success); }
     .bf-note { margin: 10px 0 0; font-size: 0.7rem; color: var(--ft-text-faint); line-height: 1.4; }
     .cell.bf { grid-column: 1 / -1; border-color: var(--ft-accent); background: var(--ft-accent-soft); }
 
@@ -595,6 +609,29 @@ interface Entry { item: BodyMeasurement; rows: Row[]; bf: number | null; bmi: nu
           <!-- Gordura corporal -->
           <div class="card">
             <p class="card-title">{{ 'meas.bf' | t }}</p>
+            @if (weightBreakdown(); as wb) {
+              <div class="wb">
+                <p class="wb-title">{{ (wb.lost ? 'meas.wb_lost' : 'meas.wb_gained') | t: { kg: wb.kg } }}</p>
+                <div class="wb-bar" role="img"
+                     [attr.aria-label]="('meas.fat_mass' | t) + ' ' + wb.fatPct + '%, ' + ('meas.lean_mass' | t) + ' ' + wb.leanPct + '%'">
+                  <span class="fat" [style.width.%]="wb.fatPct"></span>
+                  <span class="lean" [style.width.%]="wb.leanPct"></span>
+                </div>
+                <div class="wb-legend">
+                  <div class="wb-item">
+                    <span class="wb-dot fat"></span>
+                    <div><strong>{{ wb.fatPct }}%</strong><small>{{ 'meas.fat_mass' | t }} · {{ wb.fatKg }} kg</small></div>
+                  </div>
+                  <div class="wb-item">
+                    <span class="wb-dot lean"></span>
+                    <div><strong>{{ wb.leanPct }}%</strong><small>{{ 'meas.lean_mass' | t }} · {{ wb.leanKg }} kg</small></div>
+                  </div>
+                </div>
+                @if (wb.noteKey) {
+                  <p class="wb-note">{{ wb.noteKey | t: { kg: wb.noteKg } }}</p>
+                }
+              </div>
+            }
             @if (fat(); as f) {
               <div class="bf-grid">
                 <div class="cell"><div class="cell-label">{{ 'meas.before' | t }}</div><div class="cell-value">{{ f.bfBefore }}<small>%</small></div></div>
@@ -938,8 +975,10 @@ export class MedidasPage implements OnInit {
 
     const f = this.fat();
     const bmi = this.bmiInfo();
+    // Músculos crescendo é bom; cintura e quadril diminuindo é bom; pescoço não tem lado certo
+    const better = (key: FieldKey) => MUSCLE_KEYS.has(key) ? 'up' as const : key === 'waistCm' || key === 'hipCm' ? 'down' as const : 'none' as const;
     const toRow = (p: { field: Field; before: number; after: number; diff: number }): ProgressRow =>
-      ({ label: t(p.field.label), before: p.before, after: p.after, diff: p.diff, unit: p.field.unit });
+      ({ label: t(p.field.label), before: p.before, after: p.after, diff: p.diff, unit: p.field.unit, better: better(p.field.key) });
     // Músculos: ganhos primeiro (o que mais cresceu no topo); outras medidas: o que mais mudou
     const rows = this.progress().filter(p => p.field.key !== 'weightKg');
     const muscles = rows.filter(p => MUSCLE_KEYS.has(p.field.key)).sort((x, y) => y.diff - x.diff).map(toRow);
@@ -1093,6 +1132,34 @@ export class MedidasPage implements OnInit {
       };
     }
     return { bfBefore, bfAfter, bfDiff: r1(bfAfter - bfBefore), mass };
+  });
+
+  /**
+   * Do peso que mudou, quanto foi gordura e quanto foi massa magra (em % e kg).
+   * Se uma parte foi no sentido contrário (ex.: perdeu peso mas ganhou massa magra), ela vira uma nota.
+   */
+  weightBreakdown = computed(() => {
+    const m = this.fat()?.mass;
+    if (!m) return null;
+    const r1 = (n: number) => Math.round(n * 10) / 10;
+    const dw = r1(m.weightAfter - m.weightBefore);
+    if (Math.abs(dw) < 0.1) return null;
+    const lost = dw < 0;
+    // Só conta a parte que foi no mesmo sentido do peso
+    const fatPart = Math.max(0, lost ? -m.fatDiff : m.fatDiff);
+    const leanPart = Math.max(0, lost ? -m.leanDiff : m.leanDiff);
+    const total = fatPart + leanPart;
+    if (total === 0) return null;
+    const fatPct = Math.round((fatPart / total) * 100);
+    const fmt = (n: number) => r1(n).toLocaleString(this.i18n.locale());
+    let noteKey: string | null = null, noteKg = '';
+    if (lost && m.leanDiff > 0.3) { noteKey = 'meas.wb_lean_up'; noteKg = fmt(m.leanDiff); }
+    if (!lost && m.fatDiff < -0.3) { noteKey = 'meas.wb_fat_down'; noteKg = fmt(-m.fatDiff); }
+    return {
+      lost, kg: fmt(Math.abs(dw)),
+      fatPct, leanPct: 100 - fatPct, fatKg: fmt(fatPart), leanKg: fmt(leanPart),
+      noteKey, noteKg
+    };
   });
 
   loadProfile() {
