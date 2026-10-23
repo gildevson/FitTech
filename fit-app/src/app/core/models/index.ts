@@ -14,6 +14,14 @@ export interface BodyMeasurement {
   leftThighCm?: number | null;
   rightCalfCm?: number | null;
   leftCalfCm?: number | null;
+  // Dobras cutâneas (adipômetro), em mm — opcionais
+  skinfoldChestMm?: number | null;
+  skinfoldAxillaMm?: number | null;
+  skinfoldTricepsMm?: number | null;
+  skinfoldSubscapularMm?: number | null;
+  skinfoldAbdomenMm?: number | null;
+  skinfoldSuprailiacMm?: number | null;
+  skinfoldThighMm?: number | null;
   notes?: string | null;
   createdAt: string;
 }

@@ -24,6 +24,7 @@ export interface ProgressShareData {
   lean?: BeforeAfter;     // massa magra (kg)
   fatMass?: BeforeAfter;  // massa gorda (kg)
   bf?: BeforeAfter;       // % de gordura
+  bfMethod?: 'skinfold' | 'navy'; // adipômetro ou fita métrica (muda a nota do rodapé)
   bmi?: BeforeAfter & { label?: string };
   muscles: ProgressRow[]; // ombros, peitoral, braços, coxas, panturrilhas
   others: ProgressRow[];  // cintura, quadril, pescoço
@@ -196,7 +197,8 @@ export class ProgressShareService {
     ctx.textAlign = 'left';
     ctx.fillStyle = p.faint;
     ctx.font = font(24, 600);
-    ctx.fillText(comp || d.bf ? t('share.navy_note') : t('share.footer_report'), X, FOOTER_Y + 56);
+    const note = !(comp || d.bf) ? 'share.footer_report' : d.bfMethod === 'skinfold' ? 'share.skinfold_note' : 'share.navy_note';
+    ctx.fillText(t(note), X, FOOTER_Y + 56);
     ctx.textAlign = 'right';
     ctx.font = font(26, 800);
     ctx.fillText('FitMob', W - X, FOOTER_Y + 56);

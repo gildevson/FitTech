@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal, OnInit, ElementRef, afterRender, viewChild } from '@angular/core';
+import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { ProfileButtonComponent } from '../../shared/profile-button/profile-button.component';
 import { PageTitleComponent } from '../../shared/page-title/page-title.component';
 import { FormsModule } from '@angular/forms';
@@ -117,11 +117,67 @@ export function navyBodyFat(m: BodyMeasurement, sex: Sex | null, heightCm: numbe
   return Math.round(Math.min(60, Math.max(2, bf)) * 10) / 10;
 }
 
+type SkinfoldKey =
+  | 'skinfoldChestMm' | 'skinfoldAxillaMm' | 'skinfoldTricepsMm' | 'skinfoldSubscapularMm'
+  | 'skinfoldAbdomenMm' | 'skinfoldSuprailiacMm' | 'skinfoldThighMm';
+
+const SKINFOLDS_7: SkinfoldKey[] = [
+  'skinfoldChestMm', 'skinfoldAxillaMm', 'skinfoldTricepsMm', 'skinfoldSubscapularMm',
+  'skinfoldAbdomenMm', 'skinfoldSuprailiacMm', 'skinfoldThighMm'
+];
+/** Protocolo de 3 dobras de Jackson-Pollock: muda conforme o sexo */
+const SKINFOLDS_3: Record<Sex, SkinfoldKey[]> = {
+  M: ['skinfoldChestMm', 'skinfoldAbdomenMm', 'skinfoldThighMm'],
+  F: ['skinfoldTricepsMm', 'skinfoldSuprailiacMm', 'skinfoldThighMm']
+};
+
+/** jp7/jp3 = adipômetro (Jackson-Pollock 7 ou 3 dobras); navy = fita métrica (Marinha dos EUA) */
+export type BfMethod = 'jp7' | 'jp3' | 'navy';
+/** Ordem de preferência: o adipômetro é mais preciso que a fita */
+const BF_METHODS: BfMethod[] = ['jp7', 'jp3', 'navy'];
+
+/**
+ * Percentual de gordura pelas dobras cutâneas (Jackson-Pollock) + densidade → % pela equação de Siri.
+ * Precisa de sexo e idade; usa só as dobras do protocolo pedido (7 ou as 3 do sexo).
+ */
+export function skinfoldBodyFat(m: BodyMeasurement, sex: Sex | null, age: number | null, protocol: 'jp7' | 'jp3'): number | null {
+  if (!sex || age === null) return null;
+  const keys = protocol === 'jp7' ? SKINFOLDS_7 : SKINFOLDS_3[sex];
+  const values = keys.map(k => m[k]);
+  if (values.some(v => !v)) return null;
+  const s = values.reduce<number>((t, v) => t + (v as number), 0);
+  const density = protocol === 'jp7'
+    ? (sex === 'M'
+      ? 1.112 - 0.00043499 * s + 0.00000055 * s * s - 0.00028826 * age
+      : 1.097 - 0.00046971 * s + 0.00000056 * s * s - 0.00012828 * age)
+    : (sex === 'M'
+      ? 1.10938 - 0.0008267 * s + 0.0000016 * s * s - 0.0002574 * age
+      : 1.0994921 - 0.0009929 * s + 0.0000023 * s * s - 0.0001392 * age);
+  const bf = 495 / density - 450;
+  if (!Number.isFinite(bf)) return null;
+  return Math.round(Math.min(60, Math.max(2, bf)) * 10) / 10;
+}
+
+export function bodyFatBy(method: BfMethod, m: BodyMeasurement, sex: Sex | null, heightCm: number | null, age: number | null): number | null {
+  return method === 'navy' ? navyBodyFat(m, sex, heightCm) : skinfoldBodyFat(m, sex, age, method);
+}
+
+/** % de gordura pelo método mais preciso que a medição permite */
+export function bestBodyFat(m: BodyMeasurement, sex: Sex | null, heightCm: number | null, age: number | null): { value: number; method: BfMethod } | null {
+  for (const method of BF_METHODS) {
+    const value = bodyFatBy(method, m, sex, heightCm, age);
+    if (value !== null) return { value, method };
+  }
+  return null;
+}
+
 type FieldKey =
   | 'weightKg' | 'neckCm' | 'shouldersCm' | 'chestCm' | 'waistCm' | 'hipCm'
-  | 'rightArmCm' | 'leftArmCm' | 'rightThighCm' | 'leftThighCm' | 'rightCalfCm' | 'leftCalfCm';
+  | 'rightArmCm' | 'leftArmCm' | 'rightThighCm' | 'leftThighCm' | 'rightCalfCm' | 'leftCalfCm'
+  | SkinfoldKey;
 
-interface Field { key: FieldKey; label: string; unit: string; }
+/** skinfold: dobra do adipômetro (seção opcional do formulário); hint: onde medir */
+interface Field { key: FieldKey; label: string; unit: string; skinfold?: boolean; hint?: string; }
 
 const FIELDS: Field[] = [
   { key: 'weightKg', label: 'meas.weight', unit: 'kg' },
@@ -135,14 +191,24 @@ const FIELDS: Field[] = [
   { key: 'rightThighCm', label: 'meas.right_thigh', unit: 'cm' },
   { key: 'leftThighCm', label: 'meas.left_thigh', unit: 'cm' },
   { key: 'rightCalfCm', label: 'meas.right_calf', unit: 'cm' },
-  { key: 'leftCalfCm', label: 'meas.left_calf', unit: 'cm' }
+  { key: 'leftCalfCm', label: 'meas.left_calf', unit: 'cm' },
+  { key: 'skinfoldChestMm', label: 'meas.sf_chest', unit: 'mm', skinfold: true, hint: 'meas.sf_chest_hint' },
+  { key: 'skinfoldAxillaMm', label: 'meas.sf_axilla', unit: 'mm', skinfold: true, hint: 'meas.sf_axilla_hint' },
+  { key: 'skinfoldTricepsMm', label: 'meas.sf_triceps', unit: 'mm', skinfold: true, hint: 'meas.sf_triceps_hint' },
+  { key: 'skinfoldSubscapularMm', label: 'meas.sf_subscapular', unit: 'mm', skinfold: true, hint: 'meas.sf_subscapular_hint' },
+  { key: 'skinfoldAbdomenMm', label: 'meas.sf_abdomen', unit: 'mm', skinfold: true, hint: 'meas.sf_abdomen_hint' },
+  { key: 'skinfoldSuprailiacMm', label: 'meas.sf_suprailiac', unit: 'mm', skinfold: true, hint: 'meas.sf_suprailiac_hint' },
+  { key: 'skinfoldThighMm', label: 'meas.sf_thigh', unit: 'mm', skinfold: true, hint: 'meas.sf_thigh_hint' }
 ];
 
 /** Medidas de músculo (destacadas no compartilhamento da evolução) */
 const MUSCLE_KEYS = new Set<FieldKey>(['shouldersCm', 'chestCm', 'rightArmCm', 'leftArmCm', 'rightThighCm', 'leftThighCm', 'rightCalfCm', 'leftCalfCm']);
 
 interface Row { field: Field; value: number; delta: number | null; }
-interface Entry { item: BodyMeasurement; rows: Row[]; bf: number | null; bmi: number | null; bmiClass: BmiRange | null; bmiGroup: BmiGroup; }
+interface Entry {
+  item: BodyMeasurement; rows: Row[]; bf: number | null; bfMethod: BfMethod | null;
+  bmi: number | null; bmiClass: BmiRange | null; bmiGroup: BmiGroup;
+}
 
 @Component({
   selector: 'app-medidas',
@@ -297,17 +363,25 @@ interface Entry { item: BodyMeasurement; rows: Row[]; bf: number | null; bmi: nu
       border-radius: var(--ft-radius-lg); margin: 12px 16px; padding: 14px 16px;
       box-shadow: var(--ft-shadow);
     }
-    .date-tabs { display: flex; gap: 8px; margin: 14px 0 0; padding: 0 16px; overflow-x: auto; scrollbar-width: none; scroll-snap-type: x proximity; }
-    .date-tabs::-webkit-scrollbar { display: none; }
-    .date-tab {
-      flex-shrink: 0; scroll-snap-align: start; display: flex; flex-direction: column; align-items: center; gap: 1px;
-      min-width: 64px; padding: 8px 12px; border-radius: 12px; cursor: pointer;
-      border: 1px solid var(--ft-border-strong); background: var(--ft-bg-elevated); color: var(--ft-text-muted);
+    .entry-picker.field { margin: 14px 16px 0; }
+
+    /* Seção opcional do adipômetro no formulário */
+    .sf-section { margin: 4px 0 12px; border: 1px solid var(--ft-border); border-radius: var(--ft-radius); background: var(--ft-bg-elevated); }
+    .sf-section.open { border-color: var(--ft-accent-ring, var(--ft-accent)); }
+    .sf-toggle {
+      width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      padding: 12px 14px; background: transparent; border: 0; cursor: pointer; text-align: left; font-family: inherit; color: var(--ft-text);
     }
-    .date-tab .dt-day { font-size: 0.85rem; font-weight: 700; white-space: nowrap; }
-    .date-tab .dt-year { font-size: 0.66rem; color: var(--ft-text-faint); }
-    .date-tab.active { background: var(--ft-accent); border-color: var(--ft-accent); color: #fff; }
-    .date-tab.active .dt-year { color: rgba(255, 255, 255, 0.8); }
+    .sf-toggle span { display: flex; flex-direction: column; gap: 2px; }
+    .sf-toggle strong { font-size: 0.9rem; }
+    .sf-toggle small { font-size: 0.74rem; color: var(--ft-text-muted); }
+    .sf-chev { color: var(--ft-text-faint); transition: transform 0.2s; flex-shrink: 0; }
+    .sf-section.open .sf-chev { transform: rotate(180deg); }
+    .sf-section .two { padding: 0 14px 4px; }
+    .sf-hint { margin: 0 14px 12px; font-size: 0.76rem; line-height: 1.4; color: var(--ft-text-muted); }
+    .sf-where { display: block; margin-top: 4px; font-size: 0.68rem; line-height: 1.3; color: var(--ft-text-faint); }
+    .field.sf-key label { color: var(--ft-accent); }
+    .bf-method { display: block; margin-top: 2px; font-size: 0.64rem; font-weight: 600; color: var(--ft-text-faint); text-transform: none; letter-spacing: 0; }
     .entry-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
     .entry-date { font-weight: 700; color: var(--ft-text); font-size: 0.95rem; }
     .del-btn { background: none; border: 0; color: var(--ft-text-faint); font-size: 1.1rem; padding: 4px 6px; cursor: pointer; }
@@ -657,7 +731,7 @@ interface Entry { item: BodyMeasurement; rows: Row[]; bf: number | null; bmi: nu
                   </div>
                 }
               }
-              <p class="bf-note">{{ 'meas.bf_note' | t }}</p>
+              <p class="bf-note">{{ (f.method === 'navy' ? 'meas.bf_note' : 'meas.bf_note_skinfold') | t }}</p>
             } @else {
               <p class="card-sub" style="margin-bottom: 0;">{{ 'meas.bf_need' | t }}</p>
             }
@@ -739,15 +813,14 @@ interface Entry { item: BodyMeasurement; rows: Row[]; bf: number | null; bmi: nu
           }
         </div>
 
-        <!-- Uma aba por data, da menor para a maior -->
-        <div class="date-tabs" role="tablist" #dateTabs>
-          @for (e of entries(); track e.item.id) {
-            <button type="button" role="tab" class="date-tab" [class.active]="selectedEntry().item.id === e.item.id"
-                    [attr.aria-selected]="selectedEntry().item.id === e.item.id" (click)="selectedEntryId.set(e.item.id)">
-              <span class="dt-day">{{ tabDay(e.item.measuredDate) }}</span>
-              <span class="dt-year">{{ tabYear(e.item.measuredDate) }}</span>
-            </button>
-          }
+        <!-- Data da medição a ver (mais recente por último, como na lista de antes) -->
+        <div class="entry-picker field">
+          <label for="entry-date-select">{{ 'meas.pick_date' | t }}</label>
+          <select id="entry-date-select" class="date-select" [ngModel]="selectedEntry().item.id" (ngModelChange)="selectedEntryId.set($event)">
+            @for (e of entries(); track e.item.id) {
+              <option [value]="e.item.id">{{ formatDate(e.item.measuredDate) }}</option>
+            }
+          </select>
         </div>
 
         @if (selectedEntry(); as e) {
@@ -761,7 +834,10 @@ interface Entry { item: BodyMeasurement; rows: Row[]; bf: number | null; bmi: nu
             <div class="grid">
               @if (e.bf !== null) {
                 <div class="cell bf">
-                  <div class="cell-label">{{ 'meas.bf_short' | t }}</div>
+                  <div class="cell-label">
+                    {{ 'meas.bf_short' | t }}
+                    <span class="bf-method">{{ bfMethodLabel(e.bfMethod) | t }}</span>
+                  </div>
                   <div class="cell-value">{{ e.bf }}<small>%</small></div>
                 </div>
               }
@@ -801,7 +877,7 @@ interface Entry { item: BodyMeasurement; rows: Row[]; bf: number | null; bmi: nu
           <p class="modal-title">{{ 'meas.add' | t }}</p>
 
           <div class="field">
-            <label>{{ 'meas.date' | t }}</label>
+            <label>{{ 'meas.pick_date' | t }}</label>
             <button type="button" class="date-btn" [class.open]="showCalendar()" (click)="showCalendar.set(!showCalendar())"
                     [attr.aria-expanded]="showCalendar()">
               <ion-icon name="calendar-outline"></ion-icon>
@@ -829,6 +905,30 @@ interface Entry { item: BodyMeasurement; rows: Row[]; bf: number | null; bmi: nu
             }
           </div>
 
+          <!-- Adipômetro: dobras cutâneas opcionais -->
+          <div class="sf-section" [class.open]="showSkinfolds()">
+            <button type="button" class="sf-toggle" (click)="showSkinfolds.set(!showSkinfolds())" [attr.aria-expanded]="showSkinfolds()">
+              <span>
+                <strong>{{ 'meas.sf_title' | t }}</strong>
+                <small>{{ 'meas.sf_sub' | t }}</small>
+              </span>
+              <ion-icon name="chevron-down" class="sf-chev"></ion-icon>
+            </button>
+            @if (showSkinfolds()) {
+              <p class="sf-hint">{{ skinfoldHint() | t }}</p>
+              <div class="two">
+                @for (f of skinfoldFields; track f.key) {
+                  <div class="field" [class.sf-key]="isKeySkinfold(f.key)">
+                    <label>{{ f.label | t }} ({{ f.unit }})</label>
+                    <ion-input type="number" inputmode="decimal" step="0.5" min="0" max="100" placeholder="0"
+                               [(ngModel)]="form.values[f.key]" fill="outline"></ion-input>
+                    @if (f.hint) { <small class="sf-where">{{ f.hint | t }}</small> }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+
           <div class="field">
             <label>{{ 'meas.notes' | t }} ({{ 'common.optional' | t }})</label>
             <ion-textarea [(ngModel)]="form.notes" rows="2" maxlength="300" fill="outline"></ion-textarea>
@@ -851,7 +951,26 @@ export class MedidasPage implements OnInit {
   private readonly toastCtrl = inject(ToastController);
   readonly i18n = inject(I18nService);
 
-  readonly fields = FIELDS;
+  /** Medidas da fita (sempre visíveis) e dobras do adipômetro (seção opcional) */
+  readonly fields = FIELDS.filter(f => !f.skinfold);
+  readonly skinfoldFields = FIELDS.filter(f => f.skinfold);
+  showSkinfolds = signal(false);
+
+  /** Quais dobras usar no cálculo: as 3 do sexo do perfil (ou todas as 7) */
+  skinfoldHint = computed(() => {
+    const sex = this.profile().sex;
+    return sex === 'M' ? 'meas.sf_need_m' : sex === 'F' ? 'meas.sf_need_f' : 'meas.sf_need_profile';
+  });
+
+  /** Dobra que faz parte do protocolo de 3 do sexo do perfil (destacada no formulário) */
+  isKeySkinfold(key: FieldKey): boolean {
+    const sex = this.profile().sex;
+    return !!sex && SKINFOLDS_3[sex].includes(key as SkinfoldKey);
+  }
+
+  bfMethodLabel(method: BfMethod | null): string {
+    return method === 'navy' ? 'meas.bf_by_tape' : method ? 'meas.bf_by_skinfold' : '';
+  }
   readonly today = this.localToday();
 
   loading = signal(true);
@@ -878,8 +997,6 @@ export class MedidasPage implements OnInit {
 
   /** Aba de data aberta no histórico; sem escolha (ou se o registro sumiu), mostra a mais recente (a última) */
   selectedEntryId = signal<string | null>(null);
-  private readonly dateTabs = viewChild<ElementRef<HTMLElement>>('dateTabs');
-  private scrolledTo: { id: string; box: HTMLElement } | null = null;
   selectedEntry = computed(() => {
     const list = this.entries();
     return list.find(e => e.item.id === this.selectedEntryId()) ?? list[list.length - 1] ?? null;
@@ -976,7 +1093,9 @@ export class MedidasPage implements OnInit {
     const f = this.fat();
     const bmi = this.bmiInfo();
     // Músculos crescendo é bom; cintura e quadril diminuindo é bom; pescoço não tem lado certo
-    const better = (key: FieldKey) => MUSCLE_KEYS.has(key) ? 'up' as const : key === 'waistCm' || key === 'hipCm' ? 'down' as const : 'none' as const;
+    // Dobras do adipômetro diminuindo também é bom (menos gordura sob a pele)
+    const better = (key: FieldKey) => MUSCLE_KEYS.has(key) ? 'up' as const
+      : key === 'waistCm' || key === 'hipCm' || key.startsWith('skinfold') ? 'down' as const : 'none' as const;
     const toRow = (p: { field: Field; before: number; after: number; diff: number }): ProgressRow =>
       ({ label: t(p.field.label), before: p.before, after: p.after, diff: p.diff, unit: p.field.unit, better: better(p.field.key) });
     // Músculos: ganhos primeiro (o que mais cresceu no topo); outras medidas: o que mais mudou
@@ -990,6 +1109,7 @@ export class MedidasPage implements OnInit {
       lean: f?.mass ? { before: f.mass.leanBefore, after: f.mass.leanAfter } : undefined,
       fatMass: f?.mass ? { before: f.mass.fatBefore, after: f.mass.fatAfter } : undefined,
       bf: f ? { before: f.bfBefore, after: f.bfAfter } : undefined,
+      bfMethod: f ? (f.method === 'navy' ? 'navy' : 'skinfold') : undefined,
       bmi: bmi && bmi.before !== null ? { before: bmi.before, after: bmi.bmi, label: bmi.cls ? t(bmi.cls.label) : undefined } : undefined,
       muscles, others
     }, () => this.sharingProgress.set(false)); // tira o carregamento assim que a imagem fica pronta
@@ -1111,11 +1231,16 @@ export class MedidasPage implements OnInit {
   /** Gordura estimada nas duas datas + massa gorda/magra quando há peso nos dois registros. */
   fat = computed(() => {
     const a = this.entryOf(this.fromId()), b = this.entryOf(this.toId());
-    const { sex, heightCm } = this.profile();
+    const { sex, heightCm, birthDate } = this.profile();
     if (!a || !b) return null;
-    const bfBefore = navyBodyFat(a, sex, heightCm);
-    const bfAfter = navyBodyFat(b, sex, heightCm);
-    if (bfBefore === null || bfAfter === null) return null;
+    // Mesmo método nas duas datas (adipômetro e fita dão valores diferentes): o mais preciso que as duas permitem
+    let bfBefore: number | null = null, bfAfter: number | null = null, method: BfMethod | null = null;
+    for (const m of BF_METHODS) {
+      bfBefore = bodyFatBy(m, a, sex, heightCm, ageAt(birthDate, a.measuredDate));
+      bfAfter = bodyFatBy(m, b, sex, heightCm, ageAt(birthDate, b.measuredDate));
+      if (bfBefore !== null && bfAfter !== null) { method = m; break; }
+    }
+    if (bfBefore === null || bfAfter === null || method === null) return null;
 
     const r1 = (n: number) => Math.round(n * 10) / 10;
     let mass = null as null | {
@@ -1131,7 +1256,7 @@ export class MedidasPage implements OnInit {
         weightBefore: a.weightKg, weightAfter: b.weightKg
       };
     }
-    return { bfBefore, bfAfter, bfDiff: r1(bfAfter - bfBefore), mass };
+    return { bfBefore, bfAfter, bfDiff: r1(bfAfter - bfBefore), mass, method };
   });
 
   /**
@@ -1213,15 +1338,6 @@ export class MedidasPage implements OnInit {
   }
 
   constructor() {
-    // A aba aberta (por padrão a mais recente, no fim da fileira) sempre fica visível
-    afterRender(() => {
-      const id = this.selectedEntry()?.item.id ?? null;
-      const box = this.dateTabs()?.nativeElement;
-      if (!box || !id || (this.scrolledTo?.id === id && this.scrolledTo.box === box)) return;
-      this.scrolledTo = { id, box }; // box muda quando a lista é recriada (ex.: voltar da aba Progresso)
-      const tab = box.querySelector<HTMLElement>('.date-tab.active');
-      if (tab) box.scrollTo({ left: tab.offsetLeft - box.clientWidth / 2 + tab.offsetWidth / 2, behavior: 'smooth' });
-    });
     addIcons({ add, trash, bodyOutline, calendarOutline, chevronDown, shareSocial, statsChart, checkmark });
   }
 
@@ -1270,8 +1386,13 @@ export class MedidasPage implements OnInit {
       }
       const { sex, heightCm, birthDate } = this.profile();
       const bmi = bmiOf(item.weightKg, heightCm);
-      const group = bmiGroup(ageAt(birthDate, item.measuredDate));
-      return { item, rows, bf: navyBodyFat(item, sex, heightCm), bmi, bmiClass: bmi === null ? null : classifyBmi(bmi, group), bmiGroup: group };
+      const age = ageAt(birthDate, item.measuredDate);
+      const group = bmiGroup(age);
+      const bf = bestBodyFat(item, sex, heightCm, age);
+      return {
+        item, rows, bf: bf?.value ?? null, bfMethod: bf?.method ?? null,
+        bmi, bmiClass: bmi === null ? null : classifyBmi(bmi, group), bmiGroup: group
+      };
     });
   }
 
@@ -1280,15 +1401,6 @@ export class MedidasPage implements OnInit {
   formatDate(iso: string): string {
     const [y, m, d] = iso.slice(0, 10).split('-').map(Number);
     return new Date(y, m - 1, d).toLocaleDateString(this.i18n.locale(), { day: '2-digit', month: 'short', year: 'numeric' });
-  }
-
-  tabDay(iso: string): string {
-    const [y, m, d] = iso.slice(0, 10).split('-').map(Number);
-    return new Date(y, m - 1, d).toLocaleDateString(this.i18n.locale(), { day: '2-digit', month: 'short' }).replace('.', '');
-  }
-
-  tabYear(iso: string): string {
-    return iso.slice(0, 4);
   }
 
   private localToday(): string {
@@ -1302,6 +1414,7 @@ export class MedidasPage implements OnInit {
 
   openForm() {
     this.form = this.emptyForm();
+    this.showSkinfolds.set(false);
     this.formError.set('');
     this.showCalendar.set(false);
     this.showForm.set(true);

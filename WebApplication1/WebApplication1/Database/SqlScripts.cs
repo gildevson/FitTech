@@ -195,5 +195,14 @@ public static class SqlScripts
 
         -- Data de nascimento: a classificação do IMC muda com a idade (adulto x idoso)
         ALTER TABLE users ADD COLUMN IF NOT EXISTS birth_date DATE;
+
+        -- Dobras cutâneas (adipômetro), em mm, opcionais: % de gordura por Jackson-Pollock (3 ou 7 dobras)
+        ALTER TABLE body_measurements ADD COLUMN IF NOT EXISTS skinfold_chest_mm DECIMAL(4,1);
+        ALTER TABLE body_measurements ADD COLUMN IF NOT EXISTS skinfold_axilla_mm DECIMAL(4,1);
+        ALTER TABLE body_measurements ADD COLUMN IF NOT EXISTS skinfold_triceps_mm DECIMAL(4,1);
+        ALTER TABLE body_measurements ADD COLUMN IF NOT EXISTS skinfold_subscapular_mm DECIMAL(4,1);
+        ALTER TABLE body_measurements ADD COLUMN IF NOT EXISTS skinfold_abdomen_mm DECIMAL(4,1);
+        ALTER TABLE body_measurements ADD COLUMN IF NOT EXISTS skinfold_suprailiac_mm DECIMAL(4,1);
+        ALTER TABLE body_measurements ADD COLUMN IF NOT EXISTS skinfold_thigh_mm DECIMAL(4,1);
         """;
 }

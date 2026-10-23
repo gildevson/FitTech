@@ -34,6 +34,9 @@ public class MeasurementsController : ControllerBase
             return BadRequest(new { message = "Informe pelo menos uma medida." });
         if (values.Any(v => v is <= 0 or > 500))
             return BadRequest(new { message = "Valores inválidos. Use números maiores que 0." });
+        // Dobra cutânea acima de 100 mm é erro de digitação (o adipômetro mede até ~80 mm)
+        if (dto.Skinfolds().Any(v => v is > 100))
+            return BadRequest(new { message = "Dobra cutânea inválida (máximo de 100 mm)." });
 
         var date = dto.MeasuredDate?.Date ?? TodayInBrazil();
         if (date > TodayInBrazil())

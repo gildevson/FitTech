@@ -9,6 +9,10 @@ public class BodyMeasurementRepository : IBodyMeasurementRepository
           shoulders_cm AS ShouldersCm, chest_cm AS ChestCm, waist_cm AS WaistCm, hip_cm AS HipCm,
           right_arm_cm AS RightArmCm, left_arm_cm AS LeftArmCm, right_thigh_cm AS RightThighCm,
           left_thigh_cm AS LeftThighCm, right_calf_cm AS RightCalfCm, left_calf_cm AS LeftCalfCm,
+          skinfold_chest_mm AS SkinfoldChestMm, skinfold_axilla_mm AS SkinfoldAxillaMm,
+          skinfold_triceps_mm AS SkinfoldTricepsMm, skinfold_subscapular_mm AS SkinfoldSubscapularMm,
+          skinfold_abdomen_mm AS SkinfoldAbdomenMm, skinfold_suprailiac_mm AS SkinfoldSuprailiacMm,
+          skinfold_thigh_mm AS SkinfoldThighMm,
           notes, created_at AS CreatedAt";
 
     public BodyMeasurementRepository(DbConnectionFactory connectionFactory)
@@ -30,10 +34,14 @@ public class BodyMeasurementRepository : IBodyMeasurementRepository
         return await conn.QuerySingleAsync<BodyMeasurement>(
             $@"INSERT INTO body_measurements
                  (user_id, measured_date, weight_kg, neck_cm, shoulders_cm, chest_cm, waist_cm, hip_cm,
-                  right_arm_cm, left_arm_cm, right_thigh_cm, left_thigh_cm, right_calf_cm, left_calf_cm, notes)
+                  right_arm_cm, left_arm_cm, right_thigh_cm, left_thigh_cm, right_calf_cm, left_calf_cm,
+                  skinfold_chest_mm, skinfold_axilla_mm, skinfold_triceps_mm, skinfold_subscapular_mm,
+                  skinfold_abdomen_mm, skinfold_suprailiac_mm, skinfold_thigh_mm, notes)
                VALUES
                  (@UserId, @Date, @WeightKg, @NeckCm, @ShouldersCm, @ChestCm, @WaistCm, @HipCm,
-                  @RightArmCm, @LeftArmCm, @RightThighCm, @LeftThighCm, @RightCalfCm, @LeftCalfCm, @Notes)
+                  @RightArmCm, @LeftArmCm, @RightThighCm, @LeftThighCm, @RightCalfCm, @LeftCalfCm,
+                  @SkinfoldChestMm, @SkinfoldAxillaMm, @SkinfoldTricepsMm, @SkinfoldSubscapularMm,
+                  @SkinfoldAbdomenMm, @SkinfoldSuprailiacMm, @SkinfoldThighMm, @Notes)
                RETURNING {SelectColumns}",
             new
             {
@@ -41,6 +49,8 @@ public class BodyMeasurementRepository : IBodyMeasurementRepository
                 Date = date,
                 dto.WeightKg, dto.NeckCm, dto.ShouldersCm, dto.ChestCm, dto.WaistCm, dto.HipCm,
                 dto.RightArmCm, dto.LeftArmCm, dto.RightThighCm, dto.LeftThighCm, dto.RightCalfCm, dto.LeftCalfCm,
+                dto.SkinfoldChestMm, dto.SkinfoldAxillaMm, dto.SkinfoldTricepsMm, dto.SkinfoldSubscapularMm,
+                dto.SkinfoldAbdomenMm, dto.SkinfoldSuprailiacMm, dto.SkinfoldThighMm,
                 dto.Notes
             });
     }

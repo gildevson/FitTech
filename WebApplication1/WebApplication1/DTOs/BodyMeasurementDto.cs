@@ -24,11 +24,26 @@ public class SaveBodyMeasurementDto
     public decimal? RightCalfCm { get; set; }
     public decimal? LeftCalfCm { get; set; }
 
+    // Dobras cutâneas (adipômetro), em mm — opcionais
+    public decimal? SkinfoldChestMm { get; set; }
+    public decimal? SkinfoldAxillaMm { get; set; }
+    public decimal? SkinfoldTricepsMm { get; set; }
+    public decimal? SkinfoldSubscapularMm { get; set; }
+    public decimal? SkinfoldAbdomenMm { get; set; }
+    public decimal? SkinfoldSuprailiacMm { get; set; }
+    public decimal? SkinfoldThighMm { get; set; }
+
     public string? Notes { get; set; }
 
     public IEnumerable<decimal?> Values() => new[]
     {
         WeightKg, NeckCm, ShouldersCm, ChestCm, WaistCm, HipCm, RightArmCm, LeftArmCm,
         RightThighCm, LeftThighCm, RightCalfCm, LeftCalfCm
+    }.Concat(Skinfolds());
+
+    public IEnumerable<decimal?> Skinfolds() => new[]
+    {
+        SkinfoldChestMm, SkinfoldAxillaMm, SkinfoldTricepsMm, SkinfoldSubscapularMm,
+        SkinfoldAbdomenMm, SkinfoldSuprailiacMm, SkinfoldThighMm
     };
 }
