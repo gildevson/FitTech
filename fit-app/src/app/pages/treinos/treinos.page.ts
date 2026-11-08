@@ -38,6 +38,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { WorkoutAssignmentService } from '../../core/services/workout-assignment.service';
 import { WorkoutShareService } from '../../core/services/workout-share.service';
 import { WorkoutPlan, Workout, WorkoutExercise, Exercise, WorkoutLog, AssignedWorkout } from '../../core/models';
+import { ProfilePhotoService } from '../../core/services/profile-photo.service';
 import { forkJoin } from 'rxjs';
 
 interface SelectedExercise {
@@ -250,6 +251,12 @@ function localDateStr(d: Date): string {
     button.ex-editable { width: 100%; text-align: left; cursor: pointer; font-family: inherit; color: inherit; }
     button.ex-editable:active { border-color: var(--ft-accent); }
     .ex-pencil { margin-left: 6px; color: var(--ft-text-faint); font-weight: 400; }
+    .add-ex-btn {
+      width: 100%; padding: 10px; margin-top: 2px;
+      border: 1.5px dashed var(--ft-accent); border-radius: 10px;
+      background: transparent; color: var(--ft-accent);
+      font-size: 0.82rem; font-weight: 700; cursor: pointer;
+    }
     .ex-editing { flex-direction: column; align-items: stretch; border-color: var(--ft-accent); }
     /* Miniatura e pré-visualização do exercício (GIF), para quem não conhece pelo nome */
     .ex-row-main { display: flex; align-items: center; gap: 10px; min-width: 0; }
@@ -771,7 +778,7 @@ function localDateStr(d: Date): string {
       background: var(--ft-surface);
     }
     .done-wrap {
-      height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      height: 100%; overflow-y: auto; display: flex; flex-direction: column; align-items: center; justify-content: safe center;
       gap: 10px; padding: 32px 24px; text-align: center; background: var(--ft-bg);
     }
     .done-check {
@@ -785,7 +792,26 @@ function localDateStr(d: Date): string {
     .done-title { font-size: 1.4rem; font-weight: 800; color: var(--ft-text); }
     .done-sub { font-size: 0.9rem; color: var(--ft-text-muted); }
     .done-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 14px 0 10px; width: 100%; max-width: 320px; }
-    .kcal-stat { font-family: inherit; cursor: pointer; text-align: left; border-color: rgba(249, 115, 22, 0.45) !important; background: rgba(249, 115, 22, 0.1) !important; }
+    .kcal-stat { font-family: inherit; cursor: pointer; }
+    .done-avatar { position: relative; width: 96px; height: 96px; margin-bottom: 8px; animation: done-pop 0.35s ease-out; }
+    .done-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 4px solid var(--ft-accent); box-sizing: border-box; }
+    .done-avatar-check {
+      position: absolute; right: -2px; bottom: -2px; width: 34px; height: 34px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; font-size: 1.05rem; font-weight: 800; color: #fff;
+      background: #22c55e; border: 3px solid var(--ft-bg);
+    }
+    .done-ex-list {
+      width: 100%; max-width: 320px; margin: 0 0 12px; padding: 4px 14px; text-align: left;
+      background: var(--ft-bg-elevated); border: 1px solid var(--ft-border, rgba(255,255,255,0.08)); border-radius: var(--ft-radius);
+    }
+    .done-ex { display: flex; align-items: center; gap: 10px; padding: 10px 0; }
+    .done-ex + .done-ex { border-top: 1px solid var(--ft-border, rgba(255,255,255,0.08)); }
+    .done-ex-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ft-accent); flex-shrink: 0; }
+    .done-ex-info { flex: 1; min-width: 0; }
+    .done-ex-name { font-size: 0.88rem; font-weight: 700; color: var(--ft-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .done-ex-detail { font-size: 0.74rem; font-weight: 600; color: var(--ft-text-muted); }
+    .done-ex-weight { font-size: 1rem; font-weight: 800; color: var(--ft-accent); text-align: right; white-space: nowrap; }
+    .done-ex-weight small { display: block; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ft-text-faint); }
     .kcal-stat.manual { border-style: dashed !important; }
     .kcal-pen { font-size: 0.85rem; color: var(--ft-text-faint); vertical-align: middle; }
     .kcal-note { max-width: 320px; margin: 0 0 18px; font-size: 0.72rem; line-height: 1.4; color: var(--ft-text-faint); text-align: center; }
@@ -941,82 +967,6 @@ function localDateStr(d: Date): string {
           </div>
         }
       } @else {
-
-        <!-- Admin plans as horizontal chips -->
-        @if (adminPlansWithWorkouts().length > 0) {
-          <div class="section-header">
-            <h2>{{ 'workouts.modalities' | t }}</h2>
-          </div>
-          <div class="modality-scroll">
-            @for (plan of adminPlansWithWorkouts(); track plan.id) {
-              <button class="modality-pill" [class.active]="expandedPlanId() === plan.id"
-                (click)="togglePlan(plan.id)">
-                {{ plan.name }}
-              </button>
-            }
-          </div>
-
-          <!-- Expanded modality detail -->
-          @if (expandedPlanId()) {
-            @for (plan of adminPlansWithWorkouts(); track plan.id) {
-              @if (plan.id === expandedPlanId()) {
-                <div class="modality-detail">
-                  <div class="modality-detail-header">
-                    <div class="modality-detail-title">{{ plan.name }}</div>
-                    @if (plan.description) {
-                      <div class="modality-detail-desc">{{ plan.description }}</div>
-                    }
-                  </div>
-                  @if (getWorkoutsForPlan(plan.id).length === 0) {
-                    <p class="plan-empty" style="padding: 14px 16px;">{{ 'workouts.no_workout_in_plan' | t }}</p>
-                  } @else {
-                    <div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 6px;">
-                      @for (workout of getWorkoutsForPlan(plan.id); track workout.id) {
-                        <div class="workout-block">
-                          <div class="workout-item" (click)="toggleWorkout(workout.id)">
-                            <div class="workout-item-info">
-                              <span class="workout-name">{{ workout.name }}</span>
-                              <span class="workout-day">{{ getDayName(workout.dayOfWeek) }}</span>
-                            </div>
-                            <ion-icon [name]="expandedId() === workout.id ? 'chevron-down' : 'chevron-forward'"></ion-icon>
-                          </div>
-                          @if (expandedId() === workout.id) {
-                            <div class="exercise-rows">
-                              @if (loadingExercises()) {
-                                <ion-skeleton-text [animated]="true" style="width: 100%; height: 40px;"></ion-skeleton-text>
-                              } @else if (exercisesOf(workout.id).length === 0) {
-                                <p class="plan-empty">{{ 'workouts.no_exercise_in_workout' | t }}</p>
-                              } @else {
-                                @for (we of exercisesOf(workout.id); track we.id) {
-                                  <div class="exercise-row">
-                                    <div class="ex-row-main">
-                                      @if (we.exerciseImageUrl) {
-                                        <span class="ex-thumb"><img [src]="we.exerciseImageUrl" alt="" loading="lazy" /></span>
-                                      }
-                                      <div>
-                                        <div class="exercise-row-name">{{ we.exerciseName }}</div>
-                                        @if (we.muscleGroupName) {
-                                          <div class="exercise-row-muscle">{{ we.muscleGroupName }}</div>
-                                        }
-                                      </div>
-                                    </div>
-                                    <div class="exercise-row-meta">
-                                      {{ we.sets }}x{{ we.reps }}@if (weightSummary(we); as w) { · {{ w }} kg }<br>{{ 'workouts.rest' | t: { s: we.restSeconds } }}
-                                    </div>
-                                  </div>
-                                }
-                              }
-                            </div>
-                          }
-                        </div>
-                      }
-                    </div>
-                  }
-                </div>
-              }
-            }
-          }
-        }
 
         <!-- Treinos do Personal (assigned by admin) -->
         @if (assignedWorkouts().length > 0) {
@@ -1186,6 +1136,9 @@ function localDateStr(d: Date): string {
                               }
                             }
                           }
+                          @if (!loadingExercises()) {
+                            <button class="add-ex-btn" (click)="openAddExercises(workout)">{{ 'workouts.add_exercise' | t }}</button>
+                          }
                         </div>
                       }
                     </div>
@@ -1248,21 +1201,45 @@ function localDateStr(d: Date): string {
                 <ion-spinner name="crescent"></ion-spinner>
                 <div class="done-sub">{{ 'session.saving' | t }}</div>
               } @else if (result === 'saved') {
-                <div class="done-check">✓</div>
+                <!-- Mesmo padrão do cartão de compartilhar: foto no círculo com ✓ no canto -->
+                @if (profilePhoto.photo(); as photo) {
+                  <div class="done-avatar">
+                    <img [src]="photo" alt="" />
+                    <span class="done-avatar-check">✓</span>
+                  </div>
+                } @else {
+                  <div class="done-check">✓</div>
+                }
                 <div class="done-title">{{ 'session.done_title' | t }}</div>
                 <div class="done-sub">{{ 'session.done_sub' | t: { name: sessionWorkout()?.name } }}</div>
                 <div class="done-stats">
                   <div class="done-stat"><span>{{ sessionSummary().time }}</span>{{ 'session.duration' | t }}</div>
                   <div class="done-stat"><span>{{ sessionSummary().sets }}/{{ sessionSummary().total }}</span>{{ 'session.sets' | t }}</div>
                   @if (sessionSummary().volume > 0) {
-                    <div class="done-stat"><span>{{ fmtInt(sessionSummary().volume) }}</span>{{ 'session.volume' | t }}</div>
+                    <div class="done-stat"><span>{{ fmtInt(sessionSummary().volume) }} kg</span>{{ 'share.volume' | t }}</div>
                   }
                   <!-- Calorias: estimativa, mas o usuário pode tocar e corrigir -->
                   <button type="button" class="done-stat kcal-stat" [class.manual]="kcalManual() !== null" (click)="startEditKcal()"
                           [attr.aria-label]="'session.kcal_edit' | t">
-                    <span>🔥 {{ fmtInt(kcal()) }} <ion-icon name="create-outline" class="kcal-pen"></ion-icon></span>{{ 'session.kcal' | t }}
+                    <span>{{ fmtInt(kcal()) }} <ion-icon name="create-outline" class="kcal-pen"></ion-icon></span>🔥 {{ 'session.kcal' | t }}
                   </button>
                 </div>
+                @if (doneExercises().length > 0) {
+                  <div class="done-ex-list">
+                    @for (e of doneExercises(); track $index) {
+                      <div class="done-ex">
+                        <span class="done-ex-dot"></span>
+                        <div class="done-ex-info">
+                          <div class="done-ex-name">{{ e.name }}</div>
+                          <div class="done-ex-detail">{{ 'share.ex_detail' | t: { sets: e.sets, reps: e.reps } }}</div>
+                        </div>
+                        @if (e.maxKg) {
+                          <div class="done-ex-weight"><small>{{ 'share.weight' | t }}</small>{{ e.maxKg }} kg</div>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
                 @if (editingKcal()) {
                   <div class="kcal-edit">
                     <label>{{ 'session.kcal_edit' | t }}</label>
@@ -1417,27 +1394,16 @@ function localDateStr(d: Date): string {
         <ng-template>
           <div style="height: 100%; overflow-y: auto; background: var(--ft-surface, #fff);">
             <div class="modal-header-bar">
-              <h2>{{ 'create.title' | t }}</h2>
+              <h2>
+                @if (addTarget(); as target) { {{ 'create.add_title' | t: { name: target.name } }} }
+                @else { {{ 'create.title' | t }} }
+              </h2>
               <button class="modal-close-btn" (click)="closeCreate()">×</button>
             </div>
 
             <div class="modal-body">
 
-              <!-- Modality selector -->
-              <div class="form-group">
-                <label>{{ 'create.modality' | t }}</label>
-                @if (adminPlans().length === 0) {
-                  <p style="font-size:0.82rem;color:var(--ft-muted,#888);margin:4px 0 0;">{{ 'create.loading_modalities' | t }}</p>
-                } @else {
-                  <select class="form-select" [(ngModel)]="createModalityId">
-                    <option value="">{{ 'create.modality_none' | t }}</option>
-                    @for (plan of adminPlans(); track plan.id) {
-                      <option [value]="plan.id">{{ plan.name }}</option>
-                    }
-                  </select>
-                }
-              </div>
-
+              @if (!addTarget()) {
               <!-- Name -->
               <div class="form-group">
                 <label>{{ 'create.name' | t }}</label>
@@ -1458,6 +1424,7 @@ function localDateStr(d: Date): string {
                   <option [value]="0">{{ 'day.long.0' | t }}</option>
                 </select>
               </div>
+              }
 
               <!-- Exercise search -->
               <div class="exercise-search-section">
@@ -1557,11 +1524,11 @@ function localDateStr(d: Date): string {
                 </div>
               }
 
-              <button class="save-btn" (click)="saveWorkout()" [disabled]="saving() || !createName.trim() || selectedExercises().length === 0">
+              <button class="save-btn" (click)="saveWorkout()" [disabled]="saving() || (!addTarget() && !createName.trim()) || selectedExercises().length === 0">
                 @if (saving()) {
                   <ion-spinner name="crescent" style="width: 18px; height: 18px;"></ion-spinner> {{ 'common.saving' | t }}
                 } @else {
-                  {{ 'create.save' | t }}
+                  {{ (addTarget() ? 'create.add_save' : 'create.save') | t }}
                 }
               </button>
             </div>
@@ -1578,6 +1545,7 @@ export class TreinosPage implements OnInit, OnDestroy {
   private readonly assignmentService = inject(WorkoutAssignmentService);
   private readonly actionSheetCtrl = inject(ActionSheetController);
   private readonly shareService = inject(WorkoutShareService);
+  readonly profilePhoto = inject(ProfilePhotoService);
 
   workoutPlans = signal<WorkoutPlan[]>([]);
   workouts = signal<Workout[]>([]);
@@ -1610,6 +1578,8 @@ export class TreinosPage implements OnInit, OnDestroy {
   loadingAllExercises = signal(false);
   selectedExercises = signal<SelectedExercise[]>([]);
   saving = signal(false);
+  /** Treino existente que recebe novos exercícios (modo "adicionar"); null = criar treino novo */
+  addTarget = signal<Workout | null>(null);
 
   muscleGroups = computed(() => {
     const groups = new Set(this.allExercises().map(e => e.muscleGroupName ?? '').filter(Boolean));
@@ -1619,7 +1589,10 @@ export class TreinosPage implements OnInit, OnDestroy {
   filteredExercises = computed(() => {
     const q = this.exerciseSearch.toLowerCase().trim();
     const mg = this.selectedMuscleGroup();
+    const target = this.addTarget();
+    const already = new Set(target ? this.exercisesOf(target.id).map(we => we.exerciseId) : []);
     return this.allExercises().filter(e => {
+      if (already.has(e.id)) return false;
       const matchQ = !q || e.name.toLowerCase().includes(q) || (e.muscleGroupName ?? '').toLowerCase().includes(q);
       const matchMg = !mg || e.muscleGroupName === mg;
       return matchQ && matchMg;
@@ -1991,14 +1964,9 @@ export class TreinosPage implements OnInit, OnDestroy {
   sharing = signal(false);
   shareMsg = signal('');
 
-  async shareWorkout() {
-    const workout = this.sessionWorkout();
-    if (!workout || this.sharing()) return;
-    this.sharing.set(true);
-    this.shareMsg.set('');
-
-    // Só os exercícios com alguma série feita, com a maior carga usada
-    const exercises = this.sessionExercises()
+  /** Só os exercícios com alguma série feita, com a maior carga usada (tela de concluído e cartão) */
+  doneExercises() {
+    return this.sessionExercises()
       .map(ex => {
         const done = this.sessionSets()[ex.id] ?? [];
         const doneIdx = done.map((d, i) => (d ? i : -1)).filter(i => i >= 0);
@@ -2006,7 +1974,15 @@ export class TreinosPage implements OnInit, OnDestroy {
         return { name: ex.exerciseName ?? '', sets: doneIdx.length, reps: ex.reps, maxKg: weights.length ? Math.max(...weights) : null };
       })
       .filter(e => e.sets > 0);
+  }
 
+  async shareWorkout() {
+    const workout = this.sessionWorkout();
+    if (!workout || this.sharing()) return;
+    this.sharing.set(true);
+    this.shareMsg.set('');
+
+    const exercises = this.doneExercises();
     const s = this.sessionSummary();
     try {
     const result = await this.shareService.share({
@@ -2260,7 +2236,13 @@ export class TreinosPage implements OnInit, OnDestroy {
 
   // --- Create modal ---
 
+  openAddExercises(workout: Workout) {
+    this.openCreate();
+    this.addTarget.set(workout);
+  }
+
   openCreate() {
+    this.addTarget.set(null);
     this.createName = '';
     this.createDay = 1;
     this.createModalityId = this.expandedPlanId() ?? '';
@@ -2304,7 +2286,42 @@ export class TreinosPage implements OnInit, OnDestroy {
     this.selectedExercises.update(list => list.filter((_, i) => i !== index));
   }
 
+  /** Adiciona os exercícios selecionados ao final de um treino existente */
+  private saveAddedExercises(workout: Workout) {
+    const start = this.exercisesOf(workout.id).length;
+    this.saving.set(true);
+    const saves = this.selectedExercises().map((sel, i) =>
+      this.api.post('/api/workoutexercises', {
+        workoutId: workout.id,
+        exerciseId: sel.exerciseId,
+        sets: Number(sel.sets) || 3,
+        reps: sel.reps || '10',
+        restSeconds: Number(sel.restSeconds) || 60,
+        orderIndex: start + i
+      })
+    );
+    forkJoin(saves).subscribe({
+      next: () => {
+        this.api.get<WorkoutExercise[]>('/api/workoutexercises', { workoutId: workout.id }).subscribe({
+          next: (list) => this.exerciseCache.update(c => ({ ...c, [workout.id]: list })),
+          error: () => {}
+        });
+        this.saving.set(false);
+        this.closeCreate();
+      },
+      error: () => {
+        this.saving.set(false);
+        alert(this.i18n.t('workouts.edit_error'));
+      }
+    });
+  }
+
   saveWorkout() {
+    const target = this.addTarget();
+    if (target) {
+      if (this.selectedExercises().length > 0) this.saveAddedExercises(target);
+      return;
+    }
     const userId = this.auth.currentUser()?.userId;
     if (!userId || !this.createName.trim() || this.selectedExercises().length === 0) return;
 

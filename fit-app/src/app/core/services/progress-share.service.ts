@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { I18nService } from '../i18n/i18n.service';
-import { ShareResult, SharePalette, WorkoutShareService, sharePalette } from './workout-share.service';
+import { ShareResult, SharePalette, WorkoutShareService, loadShareFonts, shareFont, sharePalette } from './workout-share.service';
 
 export interface BeforeAfter { before: number; after: number; }
 
@@ -140,7 +140,8 @@ export class ProgressShareService {
     canvas.width = W;
     canvas.height = H;
     const ctx = canvas.getContext('2d')!;
-    const font: Font = (size, weight = 700) => `${weight} ${size}px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
+    await loadShareFonts();
+    const font: Font = shareFont;
     const p = sharePalette();
     const t = (k: string, params?: Record<string, string | number | null | undefined>) => this.i18n.t(k, params);
 
